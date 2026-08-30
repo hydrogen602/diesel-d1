@@ -3,15 +3,15 @@ use backend::D1Backend;
 use bind_collector::D1BindCollector;
 use binding::{D1Database, D1PreparedStatement, D1Result};
 use diesel::{
-    connection::{ConnectionSealed, Instrumentation},
-    query_builder::{AsQuery, QueryFragment, QueryId},
     ConnectionResult, QueryResult,
+    connection::{CacheSize, ConnectionSealed, Instrumentation},
+    query_builder::{AsQuery, QueryFragment, QueryId},
 };
-use diesel_async::{AsyncConnection, SimpleAsyncConnection};
+use diesel_async::{AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
 use futures_util::{
+    FutureExt, StreamExt,
     future::BoxFuture,
     stream::{self, BoxStream},
-    FutureExt, StreamExt,
 };
 use js_sys::{Array, Object, Reflect};
 use query_builder::D1QueryBuilder;
@@ -20,7 +20,7 @@ use transaction_manager::D1TransactionManager;
 use utils::{D1Error, SendableFuture};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
-use worker::{console_error, console_log};
+use worker::console_error;
 
 pub mod backend;
 mod bind_collector;
@@ -53,7 +53,6 @@ impl D1Connection {
 unsafe impl Send for D1Connection {}
 unsafe impl Sync for D1Connection {}
 
-#[async_trait]
 impl SimpleAsyncConnection for D1Connection {
     async fn batch_execute(&mut self, query: &str) -> diesel::QueryResult<()> {
         let statements = [JsValue::from_str(query)].iter().collect::<Array>();
@@ -65,10 +64,36 @@ impl SimpleAsyncConnection for D1Connection {
         }
     }
 }
-#[async_trait]
+
 impl AsyncConnection for D1Connection {
-    type Backend = D1Backend;
     type TransactionManager = D1TransactionManager;
+
+    async fn establish(_unused: &str) -> ConnectionResult<Self> {
+        unimplemented!("A D1 connection is made from bindings")
+    }
+
+    fn transaction_state(&mut self) -> &mut D1TransactionManager {
+        &mut self.transaction_manager
+    }
+
+    #[doc(hidden)]
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+        todo!()
+    }
+
+    #[doc = " Set a specific [`Instrumentation`] implementation for this connection"]
+    fn set_instrumentation(&mut self, _instrumentation: impl Instrumentation) {
+        todo!()
+    }
+
+    fn set_prepared_statement_cache_size(&mut self, _size: CacheSize) {
+        todo!()
+    }
+}
+
+#[async_trait]
+impl AsyncConnectionCore for D1Connection {
+    type Backend = D1Backend;
 
     #[doc = " The future returned by `AsyncConnection::execute`"]
     type ExecuteFuture<'conn, 'query> = BoxFuture<'conn, QueryResult<usize>>;
@@ -81,10 +106,6 @@ impl AsyncConnection for D1Connection {
 
     #[doc = " The row type used by the stream returned by `AsyncConnection::load`"]
     type Row<'conn, 'query> = D1Row;
-
-    async fn establish(_unused: &str) -> ConnectionResult<Self> {
-        todo!()
-    }
 
     fn load<'conn, 'query, T>(&'conn mut self, source: T) -> Self::LoadFuture<'conn, 'query>
     where
@@ -100,7 +121,7 @@ impl AsyncConnection for D1Connection {
                 Err(err) => {
                     console_error!("{:?}", err);
                     panic!("not supposed to happen .all call");
-                },
+                }
             };
 
             let result = match SendableFuture(JsFuture::from(promise)).await {
@@ -108,7 +129,7 @@ impl AsyncConnection for D1Connection {
                 Err(err) => {
                     console_error!("{:?}", err);
                     panic!("not supposed to happen .all promise");
-                },
+                }
             };
 
             let result: D1Result = result.into();
@@ -160,7 +181,7 @@ impl AsyncConnection for D1Connection {
                 Err(err) => {
                     console_error!("{:?}", err);
                     panic!("not supposed to happen .all call");
-                },
+                }
             };
 
             let result = match SendableFuture(JsFuture::from(promise)).await {
@@ -168,7 +189,7 @@ impl AsyncConnection for D1Connection {
                 Err(err) => {
                     console_error!("{:?}", err);
                     panic!("not supposed to happen .all promise");
-                },
+                }
             };
 
             let result: D1Result = result.into();
@@ -192,20 +213,6 @@ impl AsyncConnection for D1Connection {
             Ok(value as usize)
         })
         .boxed()
-    }
-
-    fn transaction_state(&mut self) -> &mut D1TransactionManager {
-        &mut self.transaction_manager
-    }
-
-    #[doc(hidden)]
-    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
-        todo!()
-    }
-
-    #[doc = " Set a specific [`Instrumentation`] implementation for this connection"]
-    fn set_instrumentation(&mut self, _instrumentation: impl Instrumentation) {
-        todo!()
     }
 }
 
@@ -238,7 +245,7 @@ where
         Err(err) => {
             console_error!("{:?}", err);
             panic!("not supposed to happen d1preparedstatement");
-        },
+        }
     };
 
     let binds = construct_bind_data(&source).unwrap();
@@ -248,6 +255,6 @@ where
         Err(err) => {
             console_error!("{:?}", err);
             panic!("not supposed to happen bind");
-        },
+        }
     }
 }

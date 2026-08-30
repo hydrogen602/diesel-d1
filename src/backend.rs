@@ -1,9 +1,12 @@
-use diesel::{backend::{sql_dialect::{self, returning_clause::DoesNotSupportReturningClause}, Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend}, sql_types::TypeMetadata};
+use diesel::{
+    backend::{
+        Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend,
+        sql_dialect::{self, returning_clause::DoesNotSupportReturningClause},
+    },
+    sql_types::TypeMetadata,
+};
 
 use crate::{bind_collector::D1BindCollector, query_builder::D1QueryBuilder, value::D1Value};
-
-
-
 
 /// The SQLite backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
@@ -24,7 +27,7 @@ pub enum D1Type {
     Binary,
     Text,
     Double,
-    Integer
+    Integer,
 }
 
 impl Backend for D1Backend {
@@ -56,6 +59,18 @@ impl SqlDialect for D1Backend {
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
     type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
+
+    // From sqlite dialect
+    // https://github.com/diesel-rs/diesel/blob/728f9df49e0a739746a758752ac064453a4c79b2/diesel/src/sqlite/backend.rs#L73-L80
+
+    type WindowFrameClauseGroupSupport =
+        sql_dialect::window_frame_clause_group_support::IsoGroupWindowFrameUnit;
+    type WindowFrameExclusionSupport =
+        sql_dialect::window_frame_exclusion_support::FrameExclusionSupport;
+    type AggregateFunctionExpressions =
+        sql_dialect::aggregate_function_expressions::PostgresLikeAggregateFunctionExpressions;
+    type BuiltInWindowFunctionRequireOrder =
+        sql_dialect::built_in_window_function_require_order::NoOrderRequired;
 }
 
 impl DieselReserveSpecialization for D1Backend {}

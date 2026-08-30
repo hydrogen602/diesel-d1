@@ -1,4 +1,3 @@
-
 use diesel::{
     query_builder::BindCollector,
     serialize::{IsNull, Output},
@@ -37,7 +36,7 @@ impl<'bind> BindCollector<'bind, D1Backend> for D1BindCollector {
             JsValue::null()
         };
 
-        let metadata = D1Backend::metadata(metadata_lookup);
+        let metadata = <D1Backend as HasSqlType<T>>::metadata(metadata_lookup);
         self.binds.push((bind, metadata));
         Ok(())
     }

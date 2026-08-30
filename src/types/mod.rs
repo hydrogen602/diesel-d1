@@ -22,7 +22,7 @@ impl FromSql<sql_types::Bool, D1Backend> for bool {
         let bool_number = value.read_number();
         if !(bool_number == 0.0 || bool_number == 1.0) {
             panic!("this shouldn't happen bool is not a bool");
-        } 
+        }
         Ok(bool_number != 0.0)
     }
 }
@@ -82,23 +82,59 @@ impl ToSql<sql_types::Integer, D1Backend> for i32 {
 
 // ------
 
-// BigInt
+// BigInt is not supported by D1
 
+/// JS `Number.MAX_SAFE_INTEGER`
+///
+/// JS numbers are doubles, and
+/// after this point, the minimum precision
+/// is greater than one.
+///
+/// JS Example:
+/// ```js
+/// > 9007199254740993 === 9007199254740992
+/// true
+/// ```
+const NUMBER_MAX_SAFE_INTEGER: i64 = 9007199254740991;
+
+/// Note:
+///   D1 supports 64-bit signed INTEGER values internally,
+///   however BigInts are not currently supported in the API yet.
+///   JavaScript integers are safe up to Number.MAX_SAFE_INTEGER.
+///   See: https://developers.cloudflare.com/d1/worker-api/
 impl HasSqlType<sql_types::BigInt> for D1Backend {
     fn metadata(_lookup: &mut ()) -> D1Type {
         D1Type::Integer
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum BigIntError {
+    #[error("Number is not an integer")]
+    NotAnInteger(f64),
+    #[error("Number exceeds Number.MAX_SAFE_INTEGER")]
+    NotASafeInteger(i64),
+}
+
 impl FromSql<sql_types::BigInt, D1Backend> for i64 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
         let text = value.read_number();
-        Ok(text as i64)
+        if !text.is_finite() || text.fract() != 0.0 {
+            return Err(BigIntError::NotAnInteger(text).into());
+        }
+        let int = text as i64;
+        if int.abs() > NUMBER_MAX_SAFE_INTEGER {
+            return Err(BigIntError::NotASafeInteger(int).into());
+        }
+        Ok(int)
     }
 }
 
 impl ToSql<sql_types::BigInt, D1Backend> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
+        if self.abs() > NUMBER_MAX_SAFE_INTEGER {
+            return Err(BigIntError::NotASafeInteger(*self).into());
+        }
         out.set_value(*self as f64);
         Ok(IsNull::No)
     }
