@@ -1,0 +1,12 @@
+name = "diesel-d1-test"
+main = "build/index.js"
+compatibility_date = "2026-08-29"
+
+[build]
+command = "cargo install -q \"worker-build@^0.8\" && worker-build --release --features worker-tests"
+
+# For other people testing - you'll need to bring your own D1 database
+[[d1_databases]]
+binding = "diesel_d1_test"
+database_name = "diesel-d1-test"
+database_id = "bdaa70cf-f2b7-4c8c-86ca-87d87a85ce95"

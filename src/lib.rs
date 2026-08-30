@@ -29,6 +29,9 @@ mod types;
 mod utils;
 mod value;
 
+#[cfg(feature = "worker-tests")]
+mod tests;
+
 pub struct D1Connection {
     transaction_manager: D1TransactionManager,
     binding: D1Database,

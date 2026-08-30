@@ -7,6 +7,12 @@ license-file = "LICENSE"
 homepage = "https://github.com/LuisDuarte1/diesel-d1"
 description = "A Diesel Backend/Connection for Cloudflare D1."
 
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+worker-tests = []
+
 [dependencies]
 diesel = { version = "2.3.12", features = [
     "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
