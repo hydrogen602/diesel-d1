@@ -14,3 +14,7 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 - [ ] make it more SQLite compatible
 - [ ] HTTP API (and allow other targets that do not use WASM)
 - [ ] Durable Object sync SQLite support
+
+# Fork notes
+
+- Primarily modernizing it, focusing on correctness (like passing an i64 > `Number.MAX_SAFE_INTEGER` should be an error as JS will lose precision), and not panicking on errors (TODO).
