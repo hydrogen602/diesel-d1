@@ -8,7 +8,6 @@ homepage = "https://github.com/LuisDuarte1/diesel-d1"
 description = "A Diesel Backend/Connection for Cloudflare D1."
 
 [dependencies]
-async-trait = "0.1.92"
 diesel = { version = "2.3.12", features = [
     "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
 ] }
@@ -18,4 +17,4 @@ js-sys = "0.3.74"
 thiserror = "2.0.20"
 wasm-bindgen = "0.2.127"
 wasm-bindgen-futures = "0.4.77"
-worker = { version = "0.8.5" }
+worker = { version = "0.8.5", features = ["d1"] }

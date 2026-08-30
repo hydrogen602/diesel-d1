@@ -1,7 +1,5 @@
-use async_trait::async_trait;
 use backend::D1Backend;
 use bind_collector::D1BindCollector;
-use binding::{D1Database, D1PreparedStatement, D1Result};
 use diesel::{
     ConnectionResult, QueryResult,
     connection::{CacheSize, ConnectionSealed, Instrumentation},
@@ -13,18 +11,17 @@ use futures_util::{
     future::BoxFuture,
     stream::{self, BoxStream},
 };
-use js_sys::{Array, Object, Reflect};
 use query_builder::D1QueryBuilder;
 use row::D1Row;
 use transaction_manager::D1TransactionManager;
 use utils::{D1Error, SendableFuture};
-use wasm_bindgen::JsValue;
-use wasm_bindgen_futures::JsFuture;
-use worker::console_error;
+use wasm_bindgen::JsCast;
+use worker::{D1Database, D1PreparedStatement, Env, console_error};
+
+use crate::bind_collector::D1TypeOwnable;
 
 pub mod backend;
 mod bind_collector;
-mod binding;
 mod query_builder;
 mod row;
 mod transaction_manager;
@@ -33,19 +30,17 @@ mod utils;
 mod value;
 
 pub struct D1Connection {
-    transaction_queries: Vec<D1PreparedStatement>,
     transaction_manager: D1TransactionManager,
     binding: D1Database,
 }
 
 impl D1Connection {
-    pub fn new(env: worker::Env, name: &str) -> Self {
-        let binding: D1Database = Reflect::get(&env, &name.to_owned().into()).unwrap().into();
-        D1Connection {
-            transaction_queries: Vec::default(),
+    pub fn new(env: Env, name: &str) -> worker::Result<Self> {
+        let binding: D1Database = env.d1(name)?;
+        Ok(D1Connection {
             transaction_manager: D1TransactionManager::default(),
             binding,
-        }
+        })
     }
 }
 
@@ -55,12 +50,13 @@ unsafe impl Sync for D1Connection {}
 
 impl SimpleAsyncConnection for D1Connection {
     async fn batch_execute(&mut self, query: &str) -> diesel::QueryResult<()> {
-        let statements = [JsValue::from_str(query)].iter().collect::<Array>();
-
-        match SendableFuture(JsFuture::from(self.binding.batch(statements).unwrap())).await {
+        match SendableFuture(self.binding.exec(query)).await {
             Ok(_) => Ok(()),
             // FIXME(lduarte): I don't send a proper error becase I don't have time at the moment
-            Err(_) => Err(diesel::result::Error::NotFound),
+            Err(e) => Err(diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::Unknown,
+                Box::new(D1Error::from(e)),
+            )),
         }
     }
 }
@@ -91,7 +87,6 @@ impl AsyncConnection for D1Connection {
     }
 }
 
-#[async_trait]
 impl AsyncConnectionCore for D1Connection {
     type Backend = D1Backend;
 
@@ -116,50 +111,35 @@ impl AsyncConnectionCore for D1Connection {
         let result = prepare_statement_sql(source, &self.binding);
 
         SendableFuture(async move {
-            let promise = match result.all() {
+            let array = match result.raw_js_value().await {
                 Ok(res) => res,
                 Err(err) => {
-                    console_error!("{:?}", err);
-                    panic!("not supposed to happen .all call");
+                    todo!("Error handling: {:?}", err);
                 }
             };
-
-            let result = match SendableFuture(JsFuture::from(promise)).await {
-                Ok(res) => res,
-                Err(err) => {
-                    console_error!("{:?}", err);
-                    panic!("not supposed to happen .all promise");
-                }
-            };
-
-            let result: D1Result = result.into();
-
-            let error = result.error().unwrap();
-
-            if let Some(error_str) = error {
-                return Err(diesel::result::Error::DatabaseError(
-                    diesel::result::DatabaseErrorKind::Unknown,
-                    Box::new(D1Error { message: error_str }),
-                ));
-            }
-
-            let array = result.results().unwrap().unwrap().to_vec();
 
             if array.is_empty() {
                 return Ok(stream::iter(vec![]).boxed());
             }
 
-            let field_keys: Vec<String> = js_sys::Object::keys(&Object::from(array[0].clone()))
-                .to_vec()
-                .iter()
-                .map(|val| val.as_string().unwrap())
-                .collect();
+            let is_arr_of_objs = array.iter().all(|val| val.is_object());
+            if !is_arr_of_objs {
+                panic!("Proper error handling");
+            }
+            let as_objs = array
+                .into_iter()
+                .map(|val| val.unchecked_into()) // we just checked that it's an object, so this is safe
+                .collect::<Vec<js_sys::Object>>();
+
+            // let field_keys: Vec<String> = js_sys::Object::keys(&Object::from(array[0].clone()))
+            //     .to_vec()
+            //     .iter()
+            //     .map(|val| val.as_string().unwrap())
+            //     .collect();
 
             // FIXME: not performant at all, should work well enough
-            let rows: Vec<QueryResult<D1Row>> = array
-                .iter()
-                .map(|val| Ok(D1Row::new(val.clone(), field_keys.clone())))
-                .collect();
+            let rows: Vec<QueryResult<D1Row>> =
+                as_objs.into_iter().map(|val| Ok(D1Row(val))).collect();
             let iter = stream::iter(rows).boxed();
             Ok(iter)
         })
@@ -176,27 +156,14 @@ impl AsyncConnectionCore for D1Connection {
     {
         let result = prepare_statement_sql(source, &self.binding);
         SendableFuture(async move {
-            let promise = match result.all() {
+            let result = match result.run().await {
                 Ok(res) => res,
                 Err(err) => {
-                    console_error!("{:?}", err);
-                    panic!("not supposed to happen .all call");
+                    todo!("Error handling: {:?}", err);
                 }
             };
 
-            let result = match SendableFuture(JsFuture::from(promise)).await {
-                Ok(res) => res,
-                Err(err) => {
-                    console_error!("{:?}", err);
-                    panic!("not supposed to happen .all promise");
-                }
-            };
-
-            let result: D1Result = result.into();
-
-            let error = result.error().unwrap();
-
-            if let Some(error_str) = error {
+            if let Some(error_str) = result.error() {
                 return Err(diesel::result::Error::DatabaseError(
                     diesel::result::DatabaseErrorKind::Unknown,
                     Box::new(D1Error { message: error_str }),
@@ -204,13 +171,10 @@ impl AsyncConnectionCore for D1Connection {
             }
 
             // if it's successful, meta exists with a `changes` key that is a number
-            let meta = result.meta().unwrap();
-            let value = js_sys::Reflect::get(&meta, &"changes".to_owned().into())
-                .unwrap()
-                .as_f64()
-                .unwrap();
+            let meta = result.meta().unwrap().unwrap();
+            let value = meta.changes.unwrap();
 
-            Ok(value as usize)
+            Ok(value)
         })
         .boxed()
     }
@@ -218,7 +182,7 @@ impl AsyncConnectionCore for D1Connection {
 
 impl ConnectionSealed for D1Connection {}
 
-fn construct_bind_data<T>(query: &T) -> Result<Array, diesel::result::Error>
+fn construct_bind_data<T>(query: &T) -> Result<Vec<D1TypeOwnable<'_>>, diesel::result::Error>
 where
     T: QueryFragment<D1Backend>,
 {
@@ -228,9 +192,9 @@ where
 
     let array = bind_collector
         .binds
-        .iter()
+        .into_iter()
         .map(|(bind, _)| bind)
-        .collect::<Array>();
+        .collect::<Vec<_>>();
     Ok(array)
 }
 
@@ -238,19 +202,25 @@ fn prepare_statement_sql<'conn, 'query, T>(source: T, binding: &D1Database) -> D
 where
     T: QueryFragment<D1Backend> + QueryId + 'query,
 {
+    // let mut query_builder = D1QueryBuilder::default();
+    // source.to_sql(&mut query_builder, &D1Backend).unwrap();
+    // let result = match binding.prepare(&query_builder.sql) {
+    //     Ok(res) => res,
+    //     Err(err) => {
+    //         console_error!("{:?}", err);
+    //         panic!("not supposed to happen d1preparedstatement");
+    //     }
+    // };
+
     let mut query_builder = D1QueryBuilder::default();
     source.to_sql(&mut query_builder, &D1Backend).unwrap();
-    let result = match binding.prepare(&query_builder.sql) {
-        Ok(res) => res,
-        Err(err) => {
-            console_error!("{:?}", err);
-            panic!("not supposed to happen d1preparedstatement");
-        }
-    };
+    let sql = query_builder.sql;
+
+    let result = binding.prepare(sql);
 
     let binds = construct_bind_data(&source).unwrap();
 
-    match result.bind(binds) {
+    match result.bind_refs(binds.iter()) {
         Ok(res) => res,
         Err(err) => {
             console_error!("{:?}", err);

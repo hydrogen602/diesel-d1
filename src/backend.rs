@@ -20,24 +20,28 @@ pub struct D1Backend;
 ///
 /// The variants of this struct determine what bytes are expected from
 /// `ToSql` impls.
+///
+/// Note: Based on [worker::D1Type]
+/// - This should be called D1Type but workers already uses that name.
 #[allow(missing_debug_implementations)]
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-// sqlite types
-pub enum D1Type {
-    Binary,
-    Text,
-    Double,
+pub enum D1TypeName {
+    Null,
+    Real,
     Integer,
+    Text,
+    Boolean,
+    Blob,
 }
 
 impl Backend for D1Backend {
     type QueryBuilder = D1QueryBuilder;
     type RawValue<'a> = D1Value;
-    type BindCollector<'a> = D1BindCollector;
+    type BindCollector<'a> = D1BindCollector<'a>;
 }
 
 impl TypeMetadata for D1Backend {
-    type TypeMetadata = D1Type;
+    type TypeMetadata = D1TypeName;
     type MetadataLookup = ();
 }
 

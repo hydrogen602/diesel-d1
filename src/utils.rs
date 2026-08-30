@@ -1,11 +1,17 @@
-use std::{future::Future, pin::Pin, task::{Context, Poll}};
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 use diesel::result::DatabaseErrorInformation;
 
 /// Basically, JS promises are never sendable - they just exist in one thread. While this could be a problem
 /// for multi-threaded WASM environments. However, Cloudflare Workers are ALWAYS single-threaded, so we can make
 /// every JSFuture sendable by using this wrapper. Useful for stuff that uses `async_trait` (and makes the future not sendable)
-pub struct SendableFuture<T>(pub T) where T: Future;
+pub struct SendableFuture<T>(pub T)
+where
+    T: Future;
 
 // Safety: WebAssembly will only ever run in a single-threaded context.
 unsafe impl<T: Future> Send for SendableFuture<T> {}
@@ -23,10 +29,25 @@ where
     }
 }
 
-
-
 pub struct D1Error {
-    pub(crate) message: String
+    pub message: String,
+}
+
+impl From<worker::Error> for D1Error {
+    fn from(error: worker::Error) -> Self {
+        D1Error {
+            message: error.to_string(),
+        }
+    }
+}
+
+impl From<D1Error> for diesel::result::Error {
+    fn from(error: D1Error) -> Self {
+        diesel::result::Error::DatabaseError(
+            diesel::result::DatabaseErrorKind::Unknown,
+            Box::new(error),
+        )
+    }
 }
 
 impl DatabaseErrorInformation for D1Error {

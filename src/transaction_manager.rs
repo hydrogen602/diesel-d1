@@ -5,9 +5,7 @@ use crate::D1Connection;
 
 #[derive(Default)]
 /// D1 doesn't have transactions other than batches
-pub struct D1TransactionManager {
-    __private: (),
-}
+pub struct D1TransactionManager;
 
 impl TransactionManager<D1Connection> for D1TransactionManager {
     type TransactionStateData = Self;
