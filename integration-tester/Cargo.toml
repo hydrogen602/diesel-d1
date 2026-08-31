@@ -11,3 +11,4 @@ diesel-d1 = { path = "../diesel-d1" }
 worker = { workspace = true }
 diesel-async = { workspace = true }
 diesel = { workspace = true }
+reqwest = "0.13.4"
