@@ -2,7 +2,7 @@
 # and then run `make worker-test` in another terminal to run the tests
 
 worker-spawn: setup-d1
-	wrangler dev
+	MAKEFLAGS= wrangler dev
 
 # This triggers a scheduled event - the scheduled event will run the tests
 worker-test:

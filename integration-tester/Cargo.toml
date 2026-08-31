@@ -1,0 +1,13 @@
+[package]
+name = "integration_tester"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+diesel-d1 = { path = "../diesel-d1" }
+worker = { workspace = true }
+diesel-async = { workspace = true }
+diesel = { workspace = true }

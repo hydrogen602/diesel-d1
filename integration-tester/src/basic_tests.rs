@@ -43,17 +43,12 @@ struct Post {
     user_id: i32,
 }
 
-#[event(scheduled)]
-async fn main(event: ScheduledEvent, env: Env, ctx: ScheduleContext) {
-    let mut d1 = D1Connection::new(env, "diesel_d1_test").unwrap();
+pub async fn test_users(env: &Env) {
+    let mut d1 = D1Connection::new(&env, "diesel_d1_test").unwrap();
 
-    test_users(&mut d1).await;
-}
-
-async fn test_users(d1: &mut D1Connection) {
     let query = sample_schema::users::table.select(sample_schema::users::all_columns);
 
-    let rows: Vec<User> = query.load(d1).await.unwrap();
+    let rows: Vec<User> = query.load(&mut d1).await.unwrap();
 
     assert_eq!(rows.len(), 2);
     assert_eq!(rows[0].id, 1);

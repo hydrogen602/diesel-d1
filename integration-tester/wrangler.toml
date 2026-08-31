@@ -3,7 +3,7 @@ main = "build/index.js"
 compatibility_date = "2026-08-29"
 
 [build]
-command = "cargo install -q \"worker-build@^0.8\" && worker-build --release --features worker-tests"
+command = "cargo install -q \"worker-build@^0.8\" && worker-build --release --panic-unwind"
 
 # For other people testing - you'll need to bring your own D1 database
 [[d1_databases]]

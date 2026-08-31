@@ -29,17 +29,15 @@ mod types;
 mod utils;
 mod value;
 
-#[cfg(feature = "worker-tests")]
-mod tests;
-
 pub struct D1Connection {
     transaction_manager: D1TransactionManager,
     binding: D1Database,
 }
 
 impl D1Connection {
-    pub fn new(env: Env, name: &str) -> worker::Result<Self> {
+    pub fn new(env: &Env, name: &str) -> worker::Result<Self> {
         let binding: D1Database = env.d1(name)?;
+        // use sessions
         Ok(D1Connection {
             transaction_manager: D1TransactionManager::default(),
             binding,
@@ -52,6 +50,11 @@ unsafe impl Send for D1Connection {}
 unsafe impl Sync for D1Connection {}
 
 impl SimpleAsyncConnection for D1Connection {
+    /// FIXME: WARNING:
+    /// This is not a d1 batch, as that requires a Vec of prepared statements,
+    /// but we only get a &str.
+    ///
+    /// A possible solution would be to parse the sql and prepare the statements
     async fn batch_execute(&mut self, query: &str) -> diesel::QueryResult<()> {
         match SendableFuture(self.binding.exec(query)).await {
             Ok(_) => Ok(()),
