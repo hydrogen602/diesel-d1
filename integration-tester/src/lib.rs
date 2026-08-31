@@ -1,7 +1,7 @@
 use diesel_d1::D1Connection;
 use worker::*;
 
-use crate::basic_tests::test_users;
+use crate::basic_tests::*;
 
 mod basic_tests;
 
@@ -25,7 +25,7 @@ macro_rules! tests {
     };
 }
 
-tests!(test_users);
+tests!(test_users, test_posts);
 
 #[event(fetch)]
 /// This will be loaded in a worker, and based on what http request is made,

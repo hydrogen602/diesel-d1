@@ -4,7 +4,7 @@
 test-worker-spawn: setup-d1
 	MAKEFLAGS= wrangler dev --local
 
-test: tests.py
+test: tests.gen.py
 	python3 "$<"
 
 # # This triggers a scheduled event - the scheduled event will run the tests
@@ -16,5 +16,5 @@ setup-d1:
 
 FORCE: 
 
-tests.py: FORCE
+tests.gen.py: FORCE
 	cargo run --bin gen_py_tests --target host-tuple

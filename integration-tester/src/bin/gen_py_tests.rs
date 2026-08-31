@@ -5,7 +5,7 @@ use integration_tester::ALL_TESTS;
 
 /// This is meant to be run on the host, not wasm.
 fn main() {
-    let mut file = File::create("tests.py").unwrap();
+    let mut file = File::create("tests.gen.py").unwrap();
     writeln!(file, "#!/usr/bin/env python3").unwrap();
     writeln!(file, "").unwrap();
     writeln!(

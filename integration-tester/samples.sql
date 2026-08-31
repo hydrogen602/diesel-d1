@@ -14,7 +14,9 @@ CREATE TABLE posts (
 ) STRICT;
 INSERT INTO users (id, name, created_at)
 VALUES (1, 'John Doe', '2021-01-01'),
-  (2, 'Jane Smith', '2021-01-02');
+  (2, 'Jane Smith', '2021-01-02'),
+  (3, 'Jim Beam', '2021-01-03'),
+  (4, 'Jane Doe', '2021-01-04');
 INSERT INTO posts (id, title, body, user_id)
 VALUES (1, 'Hello World', 'This is a test post', 1),
   (
@@ -22,4 +24,7 @@ VALUES (1, 'Hello World', 'This is a test post', 1),
     'Another Post',
     'This is another test post',
     1
-  );
+  ),
+  (3, 'Post #3', 'Lots of words', 2),
+  (4, 'Post #4', 'Even more words', 2),
+  (5, 'Post #5', 'Imagine a post here', 2);
