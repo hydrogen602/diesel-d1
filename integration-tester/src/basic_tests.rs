@@ -44,7 +44,7 @@ struct Post {
 }
 
 pub async fn test_users(env: &Env) {
-    let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
 
     // Test: S1 - All columns
     // Test: SW3 - `<` int
@@ -65,7 +65,7 @@ pub async fn test_users(env: &Env) {
 }
 
 pub async fn test_posts(env: &Env) {
-    let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
 
     // Test: S1 - All columns
     let query = sample_schema::posts::table.select(sample_schema::posts::all_columns);
@@ -142,7 +142,7 @@ pub async fn test_posts(env: &Env) {
 }
 
 pub async fn test_users_no_posts(env: &Env) {
-    let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
 
     // Test: S1 - All columns
     // Test: SJ2 - Left join

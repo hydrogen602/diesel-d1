@@ -39,7 +39,7 @@ impl D1Connection {
         let binding: D1Database = env.d1(name)?;
         // use sessions
         Ok(D1Connection {
-            transaction_manager: D1TransactionManager::default(),
+            transaction_manager: D1TransactionManager,
             binding,
         })
     }

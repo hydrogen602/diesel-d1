@@ -3,7 +3,6 @@ use diesel::{
     serialize::{self, IsNull, Output, ToSql},
     sql_types::{self, HasSqlType},
 };
-use js_sys::Uint8Array;
 
 use crate::{
     backend::{D1Backend, D1TypeName},
