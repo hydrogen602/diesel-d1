@@ -14,7 +14,9 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 
 # Integration testing
 
-## Select
+## Test Coverage
+
+### Select
 
 | ID    | Category  | Type     | Case                     | Status |
 | ----- | --------- | -------- | ------------------------ | ------ |
@@ -62,24 +64,42 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 | SQ3   | Queryable |          | Tuple of Queryable       | ✅     |
 | SQ4   | Queryable |          | Tuple of QueryableByName |        |
 
-## Insert
+### Insert
 
 TODO
 
-## Update
+### Update
 
 TODO
 
-## Delete
+### Delete
 
 TODO
 
-## SQLite specials
+### SQLite specials
 
-### Upsert
+#### Upsert
+
+TODO
+
+#### Returning
 
 TODO
 
-### Returning
+## How to run the tests
 
-TODO
+- `make test-watch` — spawn the worker and re-run tests when it is ready or hot-reloaded
+- Or: `make test-worker-spawn` in one terminal, then `make test` in another
+
+## How to add a new test
+
+1. Add a new rust function like
+   ```rust
+   pub async fn test_users(env: &Env) {
+    assert!(something_that_should_be_true);
+   }
+   ```
+2. Add the function to the `tests!` macro in `src/lib.rs`
+   ```rust
+   tests!(test_users);
+   ```
