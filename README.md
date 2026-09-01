@@ -89,6 +89,7 @@ TODO
 ## How to run the tests
 
 - `make test-watch` — spawn the worker and re-run tests when it is ready or hot-reloaded
+- `make test-once` — spawn the worker, run tests once, then stop wrangler
 - Or: `make test-worker-spawn` in one terminal, then `make test` in another
 
 ## How to add a new test
