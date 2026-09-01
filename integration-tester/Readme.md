@@ -1,7 +1,7 @@
 # How to run the tests
 
-1. Run `make test-worker-spawn` in one terminal to spawn the worker
-2. Run `make test` in another terminal to run the tests against the worker
+- `make test-watch` — spawn the worker and re-run tests when it is ready or hot-reloaded
+- Or: `make test-worker-spawn` in one terminal, then `make test` in another
 
 # How to add a new test
 
