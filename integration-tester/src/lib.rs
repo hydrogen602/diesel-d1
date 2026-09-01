@@ -25,7 +25,7 @@ macro_rules! tests {
     };
 }
 
-tests!(test_users, test_posts);
+tests!(test_users, test_posts, test_users_no_posts);
 
 pub const D1_NAME: &str = "diesel_d1_test";
 

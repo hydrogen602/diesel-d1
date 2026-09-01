@@ -140,3 +140,26 @@ pub async fn test_posts(env: &Env) {
     assert_eq!(rows[4].0.user_id, 2);
     assert_eq!(rows[4].1, "Jane Smith");
 }
+
+pub async fn test_users_no_posts(env: &Env) {
+    let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
+
+    // Test: S1 - All columns
+    // Test: SJ2 - Left join
+    // Test: SW1 - `is null`
+    let query = sample_schema::users::table
+        .left_join(sample_schema::posts::table)
+        .select(sample_schema::users::all_columns)
+        .filter(sample_schema::posts::id.is_null());
+
+    // Test: SQ1 - Queryable
+    let rows: Vec<User> = query.load(&mut d1).await.unwrap();
+
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0].id, 3);
+    assert_eq!(rows[0].name, "Jim Beam");
+    assert_eq!(rows[0].created_at, "2021-01-03");
+    assert_eq!(rows[1].id, 4);
+    assert_eq!(rows[1].name, "Jane Doe");
+    assert_eq!(rows[1].created_at, "2021-01-04");
+}

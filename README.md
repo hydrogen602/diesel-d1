@@ -23,7 +23,7 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 | S1    | Select    |          | All columns              | ✅     |
 | S2    | Select    |          | Specific columns         |        |
 | S3    | Select    |          | Tuple of columns         | ✅     |
-| SW1   | Where     | null     | `is null`                |        |
+| SW1   | Where     | null     | `is null`                | ✅     |
 | SW2   | Where     | null     | `is not null`            |        |
 | SW3   | Where     | int      | `<` int                  | ✅     |
 | SW4   | Where     | int      | `>` int                  |        |
@@ -54,7 +54,7 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 | SL1   | Limit     |          | Single value             |        |
 | SOff1 | Offset    |          | Single value             |        |
 | SJ1   | Join      |          | Inner join               | ✅     |
-| SJ2   | Join      |          | Left join                |        |
+| SJ2   | Join      |          | Left join                | ✅     |
 | SJ3   | Join      |          | Left outer join          |        |
 | SJ4   | Join      |          | Inner join ON            |        |
 | SJ5   | Join      |          | Left join ON             |        |

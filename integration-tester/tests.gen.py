@@ -16,6 +16,10 @@ class TestIntegration(unittest.TestCase):
     with urllib.request.urlopen(f'{BASE_URL}test_posts') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_posts passed')
 
+  def test_users_no_posts(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_users_no_posts') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_users_no_posts passed')
+
 
 if __name__ == '__main__':
     unittest.main()

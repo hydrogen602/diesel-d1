@@ -14,6 +14,7 @@ test-watch:
 test-worker-spawn:
 	MAKEFLAGS= wrangler dev --local --show-interactive-dev-session true
 
+# This only works if test-worker-spawn is already running
 test: tests.gen.py
 	@echo "Running tests..."
 	@python3 "$<"
@@ -26,7 +27,7 @@ tests.gen.py: FORCE
 	@RUSTFLAGS="-A warnings" cargo run -q --bin gen_py_tests --target host-tuple
 
 test-ref-finder:
-	find src -type f -name '*.rs' -exec egrep -o "//\s*Test:\s*\w+\b" \{\} \; | awk -F: '{ print $2 }'
+	find src -type f -name '*.rs' -exec egrep -o "//\s*Test:\s*\w+\b" \{\} \; | awk -F: '{ print $2 }' | sort -u
 
 # This updates the test coverage in the README.md file
 # Whenever something is tested, add // Test: <id> to the test function
