@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use worker::*;
 
-use crate::D1Connection;
+use crate::{D1_NAME, D1Connection};
 
 mod sample_schema {
     diesel::table! {
@@ -44,7 +44,7 @@ struct Post {
 }
 
 pub async fn test_users(env: &Env) {
-    let mut d1 = D1Connection::new(&env, "diesel_d1_test").unwrap();
+    let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
 
     let query = sample_schema::users::table
         .select(sample_schema::users::all_columns)
@@ -62,7 +62,7 @@ pub async fn test_users(env: &Env) {
 }
 
 pub async fn test_posts(env: &Env) {
-    let mut d1 = D1Connection::new(&env, "diesel_d1_test").unwrap();
+    let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
 
     let query = sample_schema::posts::table.select(sample_schema::posts::all_columns);
 
