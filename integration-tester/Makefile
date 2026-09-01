@@ -12,6 +12,7 @@ test-watch:
 		esac; \
 	done
 
+# Future improvement: dynamically capture the url from the worker and pass it to the tests
 test-once:
 	@$(MAKE) test-worker-spawn | tee /dev/tty | { \
 		while read -r line; do \
