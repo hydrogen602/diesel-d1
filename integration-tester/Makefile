@@ -54,10 +54,8 @@ test-ref-finder:
 # This updates the test coverage in the README.md file
 # Whenever something is tested, add // Test: <id> to the test function
 # Then run `make update-readme-test-refs` to update the README.md file
-#
-# Note: doesn't un-mark tests that are no longer tested
 update-readme-test-refs:
-	cat ../README.md |                          \
+	cat ../README.md | tr -d "✅" |             \
 		awk -F'|' -v OFS='|' -v                   \
 		ids='$(shell $(MAKE) -s test-ref-finder)' \
 		'BEGIN {                                  \

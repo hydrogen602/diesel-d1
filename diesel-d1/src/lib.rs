@@ -11,11 +11,13 @@ use futures_util::{
     future::BoxFuture,
     stream::{self, BoxStream},
 };
+use js_sys::{Array, Function, Promise, Reflect};
 use query_builder::D1QueryBuilder;
 use row::D1Row;
 use transaction_manager::D1TransactionManager;
 use utils::{D1Error, SendableFuture};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen_futures::JsFuture;
 use worker::{D1Database, D1PreparedStatement, Env, console_error};
 
 use crate::bind_collector::D1TypeOwnable;
@@ -117,37 +119,15 @@ impl AsyncConnectionCore for D1Connection {
         let result = prepare_statement_sql(source, &self.binding);
 
         SendableFuture(async move {
-            let array = match result.raw_js_value().await {
-                Ok(res) => res,
+            let rows = match raw_with_column_names(result).await {
+                Ok(rows) => rows,
                 Err(err) => {
                     todo!("Error handling: {:?}", err);
                 }
             };
 
-            if array.is_empty() {
-                return Ok(stream::iter(vec![]).boxed());
-            }
-
-            let is_arr_of_objs = array.iter().all(|val| val.is_object());
-            if !is_arr_of_objs {
-                panic!("Proper error handling");
-            }
-            let as_objs = array
-                .into_iter()
-                .map(|val| val.unchecked_into()) // we just checked that it's an object, so this is safe
-                .collect::<Vec<js_sys::Object>>();
-
-            // let field_keys: Vec<String> = js_sys::Object::keys(&Object::from(array[0].clone()))
-            //     .to_vec()
-            //     .iter()
-            //     .map(|val| val.as_string().unwrap())
-            //     .collect();
-
-            // FIXME: not performant at all, should work well enough
-            let rows: Vec<QueryResult<D1Row>> =
-                as_objs.into_iter().map(|val| Ok(D1Row(val))).collect();
-            let iter = stream::iter(rows).boxed();
-            Ok(iter)
+            // we could maybe inject our own limit and offset to fetch the results in multiple pieces.
+            Ok(stream::iter(rows).boxed())
         })
         .boxed()
     }
@@ -233,4 +213,71 @@ where
             panic!("not supposed to happen bind");
         }
     }
+}
+
+/// D1 rust bindings don't support this call yet, but the underlying JS API does.
+///
+/// ```js
+/// stmt.raw({columnNames: true})
+/// ```
+///
+/// https://developers.cloudflare.com/d1/worker-api/prepared-statements/#raw
+async fn raw_with_column_names(
+    stmt: D1PreparedStatement,
+) -> worker::Result<Vec<QueryResult<D1Row>>> {
+    let this = stmt.inner();
+    let raw_fn = Reflect::get(this, &JsValue::from_str("raw"))?
+        .dyn_into::<Function>()
+        .map_err(worker::Error::from)?;
+    let opts = js_sys::Object::new(); // FIXME: cache this object?
+    Reflect::set(&opts, &JsValue::from_str("columnNames"), &JsValue::TRUE)?;
+    let promise = raw_fn
+        .call1(this, &opts)?
+        .dyn_into::<Promise>()
+        .map_err(worker::Error::from)?;
+    let result = JsFuture::from(promise).await?;
+    let array = result.dyn_into::<Array>().map_err(worker::Error::from)?;
+
+    let Some(column_names) = array.shift_checked() else {
+        return Err(worker::Error::RustError(
+            "D1 didn't return column names".to_string(),
+        ));
+    };
+    let column_names: Vec<String> = column_names
+        .dyn_into::<Array>()
+        .map_err(worker::Error::from)?
+        .iter()
+        .map(|key| {
+            key.as_string().ok_or_else(|| {
+                worker::Error::RustError("D1 column name was not a string".to_string())
+            })
+        })
+        .collect::<worker::Result<_>>()?;
+
+    // we shifted the array so we only have data rows left
+    Ok(array
+        .into_iter()
+        .map(|value| -> QueryResult<D1Row> {
+            let values = value.dyn_into::<Array>().map_err(D1Error::from)?;
+            if values.length() as usize != column_names.len() {
+                return QueryResult::Err(
+                    D1Error {
+                        message: format!(
+                            "D1 row has {} values but {} column names",
+                            values.length(),
+                            column_names.len()
+                        ),
+                    }
+                    .into(),
+                );
+            }
+            let fields = column_names
+                .iter()
+                .cloned()
+                .zip(values.into_iter())
+                .collect::<Vec<_>>();
+
+            Ok(D1Row::from_named_values(fields))
+        })
+        .collect())
 }

@@ -25,7 +25,20 @@ macro_rules! tests {
     };
 }
 
-tests!(test_users, test_posts, test_users_no_posts);
+tests!(
+    test_users,
+    test_posts,
+    test_users_no_posts,
+    test_select_specific_columns,
+    test_where_not_null,
+    test_where_int,
+    test_where_string,
+    test_where_compound,
+    test_order_by,
+    test_limit_offset,
+    test_joins_on,
+    test_queryable_by_name
+);
 
 pub const D1_NAME: &str = "diesel_d1_test";
 

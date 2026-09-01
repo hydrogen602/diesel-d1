@@ -19,6 +19,7 @@ diesel = { workspace = true, features = [
 ] }
 diesel-async = { workspace = true }
 futures-util = "0.3.34"
+itertools = "0.15.0"
 js-sys = "0.3.74"
 thiserror = "2.0.20"
 wasm-bindgen = "0.2.127"

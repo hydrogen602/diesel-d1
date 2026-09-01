@@ -1,37 +1,35 @@
 use diesel::row::{Field, PartialRow, Row, RowIndex, RowSealed};
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsValue;
 
 use crate::{backend::D1Backend, value::D1Value};
 
-// pub struct D1Row {
-//     _js_obj: Rc<RefCell<JsValue>>,
-//     field_vec: Vec<String>,
-// }
-
-/// FIXME: Prob not performant but it's a start
+/// One result row, with column names in SELECT order.
 ///
-/// Maybe it makes sense converting this to a Map in rust?
-pub struct D1Row(pub js_sys::Object);
+/// Stored as `(name, value)` pairs so duplicate names (joins) stay positional
+/// for [`Queryable`], while [`QueryableByName`] can look up the first match.
+///
+/// TODO: it might make sense to not own the keys
+///   as currently every row has its own copy of the keys
+///   either `Vec<(&str, JsValue)>` or a `key: Arc<[String]>`
+pub struct D1Row {
+    fields: Vec<(String, JsValue)>,
+}
+
+impl D1Row {
+    pub(crate) fn from_named_values(fields: Vec<(String, JsValue)>) -> Self {
+        Self { fields }
+    }
+}
 
 // SAFETY: this is safe under WASM and workers because there's no threads and therefore no race conditions (at least memory ones)
 unsafe impl Send for D1Row {}
 unsafe impl Sync for D1Row {}
 
-// impl D1Row {
-//     pub fn new(js_value: JsValue, field_vec: Vec<String>) -> Self {
-//         Self {
-//             // again
-//             _js_obj: Rc::new(RefCell::new(js_value)),
-//             field_vec,
-//         }
-//     }
-// }
-
 impl RowSealed for D1Row {}
 
 impl<'stmt> Row<'stmt, D1Backend> for D1Row {
     type Field<'f>
-        = D1Field
+        = D1Field<'f>
     where
         'stmt: 'f,
         Self: 'f;
@@ -39,7 +37,7 @@ impl<'stmt> Row<'stmt, D1Backend> for D1Row {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
-        js_sys::Object::keys(&self.0).length() as usize
+        self.fields.len()
     }
 
     fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
@@ -48,15 +46,11 @@ impl<'stmt> Row<'stmt, D1Backend> for D1Row {
         Self: diesel::row::RowIndex<I>,
     {
         let index = self.idx(idx)?;
-        let entry = js_sys::Object::entries(&self.0).get(index as u32);
-        if entry.is_undefined() {
-            None
-        } else {
-            let entry = entry.dyn_into::<js_sys::Array>().unwrap(); // Object.entry returns an array of [key, value]
-            let key = entry.get(0).as_string().unwrap(); // FIXME: could this be a number?
-            let value = entry.get(1);
-            Some(D1Field { value, name: key })
-        }
+        let (name, value) = self.fields.get(index)?;
+        Some(D1Field {
+            value: value.clone(),
+            name,
+        })
     }
 
     fn partial_row(
@@ -69,32 +63,35 @@ impl<'stmt> Row<'stmt, D1Backend> for D1Row {
 
 impl RowIndex<usize> for D1Row {
     fn idx(&self, idx: usize) -> Option<usize> {
-        if idx < js_sys::Object::keys(&self.0).length() as usize {
+        if idx < self.fields.len() {
             Some(idx)
         } else {
             None
         }
     }
 }
-// TODO(lduarte): it's not efficient to do it like this for now ahah, but JS
+
 impl RowIndex<&str> for D1Row {
     fn idx(&self, field: &str) -> Option<usize> {
-        let keys = js_sys::Object::keys(&self.0);
-        keys.iter().position(|key| key == field)
+        self.fields.iter().position(|(name, _)| name == field)
     }
 }
 
-pub struct D1Field {
+pub struct D1Field<'a> {
     value: JsValue,
-    name: String,
+    name: &'a str,
 }
 
-impl<'stmt> Field<'stmt, D1Backend> for D1Field {
+impl<'stmt> Field<'stmt, D1Backend> for D1Field<'stmt> {
     fn field_name(&self) -> Option<&str> {
-        Some(&self.name)
+        Some(self.name)
     }
 
     fn value(&self) -> Option<D1Value> {
-        Some(D1Value(self.value.clone()))
+        if self.value.is_null() || self.value.is_undefined() {
+            None
+        } else {
+            Some(D1Value(self.value.clone()))
+        }
     }
 }

@@ -204,7 +204,7 @@ impl FromSql<sql_types::Text, D1Backend> for String {
     }
 }
 
-impl ToSql<sql_types::Text, D1Backend> for String {
+impl ToSql<sql_types::Text, D1Backend> for str {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
         out.set_value(self);
         Ok(IsNull::No)

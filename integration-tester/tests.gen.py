@@ -23,6 +23,42 @@ class TestIntegration(unittest.TestCase):
     with urllib.request.urlopen(f'{BASE_URL}test_users_no_posts') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_users_no_posts passed')
 
+  def test_select_specific_columns(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_select_specific_columns') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_select_specific_columns passed')
+
+  def test_where_not_null(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_where_not_null') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_where_not_null passed')
+
+  def test_where_int(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_where_int') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_where_int passed')
+
+  def test_where_string(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_where_string') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_where_string passed')
+
+  def test_where_compound(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_where_compound') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_where_compound passed')
+
+  def test_order_by(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_order_by') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_order_by passed')
+
+  def test_limit_offset(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_limit_offset') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_limit_offset passed')
+
+  def test_joins_on(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_joins_on') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_joins_on passed')
+
+  def test_queryable_by_name(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_queryable_by_name') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_queryable_by_name passed')
+
 
 if __name__ == '__main__':
     unittest.main()

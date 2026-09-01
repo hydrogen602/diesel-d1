@@ -21,48 +21,48 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 | ID    | Category  | Type     | Case                     | Status |
 | ----- | --------- | -------- | ------------------------ | ------ |
 | S1    | Select    |          | All columns              | ✅     |
-| S2    | Select    |          | Specific columns         |        |
+| S2    | Select    |          | Specific columns         | ✅     |
 | S3    | Select    |          | Tuple of columns         | ✅     |
 | SW1   | Where     | null     | `is null`                | ✅     |
-| SW2   | Where     | null     | `is not null`            |        |
+| SW2   | Where     | null     | `is not null`            | ✅     |
 | SW3   | Where     | int      | `<` int                  | ✅     |
-| SW4   | Where     | int      | `>` int                  |        |
-| SW5   | Where     | int      | `<=` int                 |        |
-| SW6   | Where     | int      | `>=` int                 |        |
-| SW7   | Where     | int      | `=` int                  |        |
-| SW8   | Where     | int      | `<>` int                 |        |
-| SW9   | Where     | int      | `in` int[]               |        |
-| SW10  | Where     | int      | `not in` int[]           |        |
-| SW11  | Where     | int      | `between` int            |        |
-| SW12  | Where     | int      | `not between` int        |        |
-| SW13  | Where     | string   | `<` string               |        |
-| SW14  | Where     | string   | `>` string               |        |
-| SW15  | Where     | string   | `<=` string              |        |
-| SW16  | Where     | string   | `>=` string              |        |
-| SW17  | Where     | string   | `=` string               |        |
-| SW18  | Where     | string   | `<>` string              |        |
-| SW19  | Where     | string   | `in` string[]            |        |
-| SW20  | Where     | string   | `not in` string[]        |        |
-| SW21  | Where     | string   | `like` string            |        |
-| SW22  | Where     | string   | `not like` string        |        |
-| SW23  | Where     | Compound | `and`                    |        |
-| SW24  | Where     | Compound | `or`                     |        |
-| SW25  | Where     | Compound | `not`                    |        |
-| SO1   | Order by  |          | Single column            |        |
-| SO2   | Order by  |          | Multiple columns         |        |
-| SO3   | Order by  |          | Direction                |        |
-| SL1   | Limit     |          | Single value             |        |
-| SOff1 | Offset    |          | Single value             |        |
+| SW4   | Where     | int      | `>` int                  | ✅     |
+| SW5   | Where     | int      | `<=` int                 | ✅     |
+| SW6   | Where     | int      | `>=` int                 | ✅     |
+| SW7   | Where     | int      | `=` int                  | ✅     |
+| SW8   | Where     | int      | `<>` int                 | ✅     |
+| SW9   | Where     | int      | `in` int[]               | ✅     |
+| SW10  | Where     | int      | `not in` int[]           | ✅     |
+| SW11  | Where     | int      | `between` int            | ✅     |
+| SW12  | Where     | int      | `not between` int        | ✅     |
+| SW13  | Where     | string   | `<` string               | ✅     |
+| SW14  | Where     | string   | `>` string               | ✅     |
+| SW15  | Where     | string   | `<=` string              | ✅     |
+| SW16  | Where     | string   | `>=` string              | ✅     |
+| SW17  | Where     | string   | `=` string               | ✅     |
+| SW18  | Where     | string   | `<>` string              | ✅     |
+| SW19  | Where     | string   | `in` string[]            | ✅     |
+| SW20  | Where     | string   | `not in` string[]        | ✅     |
+| SW21  | Where     | string   | `like` string            | ✅     |
+| SW22  | Where     | string   | `not like` string        | ✅     |
+| SW23  | Where     | Compound | `and`                    | ✅     |
+| SW24  | Where     | Compound | `or`                     | ✅     |
+| SW25  | Where     | Compound | `not`                    | ✅     |
+| SO1   | Order by  |          | Single column            | ✅     |
+| SO2   | Order by  |          | Multiple columns         | ✅     |
+| SO3   | Order by  |          | Direction                | ✅     |
+| SL1   | Limit     |          | Single value             | ✅     |
+| SOff1 | Offset    |          | Single value             | ✅     |
 | SJ1   | Join      |          | Inner join               | ✅     |
 | SJ2   | Join      |          | Left join                | ✅     |
-| SJ3   | Join      |          | Left outer join          |        |
-| SJ4   | Join      |          | Inner join ON            |        |
-| SJ5   | Join      |          | Left join ON             |        |
-| SJ6   | Join      |          | Left outer join ON       |        |
+| SJ3   | Join      |          | Left outer join          | ✅     |
+| SJ4   | Join      |          | Inner join ON            | ✅     |
+| SJ5   | Join      |          | Left join ON             | ✅     |
+| SJ6   | Join      |          | Left outer join ON       | ✅     |
 | SQ1   | Queryable |          | Queryable                | ✅     |
-| SQ2   | Queryable |          | QueryableByName          |        |
+| SQ2   | Queryable |          | QueryableByName          | ✅     |
 | SQ3   | Queryable |          | Tuple of Queryable       | ✅     |
-| SQ4   | Queryable |          | Tuple of QueryableByName |        |
+| SQ4   | Queryable |          | Tuple of QueryableByName | ✅     |
 
 ### Insert
 
@@ -76,7 +76,7 @@ TODO
 
 TODO
 
-### SQLite specials
+### SQLite extras
 
 #### Upsert
 
@@ -85,6 +85,20 @@ TODO
 #### Returning
 
 TODO
+
+### D1 extras
+
+| ID   | Category | Type | Case                                                        | Status |
+| ---- | -------- | ---- | ----------------------------------------------------------- | ------ |
+| D1T1 | D1       |      | Transactions are rejected                                   |        |
+| D1T2 | D1       |      | Integers larger than `Number.MAX_SAFE_INTEGER` are rejected |        |
+
+Other features todo:
+
+- [ ] Session support
+- [ ] Bookmark support
+- [ ] Batch support
+- [ ] Benchmark tests (compare to using D1 directly)
 
 ## How to run the tests
 
