@@ -46,10 +46,13 @@ struct Post {
 pub async fn test_users(env: &Env) {
     let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
 
+    // Test: S1 - All columns
+    // Test: SW3 - `<` int
     let query = sample_schema::users::table
         .select(sample_schema::users::all_columns)
         .filter(sample_schema::users::id.lt(3));
 
+    // Test: SQ1 - Queryable
     let rows: Vec<User> = query.load(&mut d1).await.unwrap();
 
     assert_eq!(rows.len(), 2);
@@ -64,6 +67,7 @@ pub async fn test_users(env: &Env) {
 pub async fn test_posts(env: &Env) {
     let mut d1 = D1Connection::new(&env, D1_NAME).unwrap();
 
+    // Test: S1 - All columns
     let query = sample_schema::posts::table.select(sample_schema::posts::all_columns);
 
     let rows: Vec<Post> = query.load(&mut d1).await.unwrap();
@@ -93,6 +97,8 @@ pub async fn test_posts(env: &Env) {
 
     // foreign key tests - join
 
+    // Test: S3 - Tuple of columns
+    // Test: SJ1 - Inner join
     let query = sample_schema::posts::table
         .inner_join(sample_schema::users::table)
         .select((
@@ -100,6 +106,7 @@ pub async fn test_posts(env: &Env) {
             sample_schema::users::name,
         ));
 
+    // Test: SQ3 - Tuple of Queryable
     let rows: Vec<(Post, String)> = query.load(&mut d1).await.unwrap();
 
     assert_eq!(rows.len(), 5);
