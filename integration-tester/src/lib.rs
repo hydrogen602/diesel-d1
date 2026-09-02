@@ -1,9 +1,9 @@
 use diesel_d1::D1Connection;
 use worker::*;
 
-use crate::basic_tests::*;
+use crate::select_tests::*;
 
-mod basic_tests;
+mod select_tests;
 
 macro_rules! tests {
     ($($test_name:ident),*) => {

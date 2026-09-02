@@ -5,7 +5,7 @@ description: Writes diesel-d1 integration tests with fully asserted output and R
 
 # Test writer
 
-Write integration tests for this crate in `integration-tester/`, matching `integration-tester/src/basic_tests.rs`.
+Write integration tests for this crate in `integration-tester/`, matching `integration-tester/src/select_tests.rs`.
 
 ## Rules
 
@@ -57,7 +57,7 @@ Every test must assert the complete result, not a subset:
 1. Read `README.md` for the IDs to cover.
 2. Read `integration-tester/test_setup.sql` and existing tests in `integration-tester/src/`.
 3. Extend fixtures/schema if the case needs data that is not there yet (`test_setup.sql` + the `diesel::table!` in the test module).
-4. Add or extend an async `pub async fn test_*` in `integration-tester/src/` (keep using `basic_tests.rs` unless a new module is clearly needed).
+4. Add or extend an async `pub async fn test_*` in `integration-tester/src/` (keep using `select_tests.rs` unless a new module is clearly needed).
 5. Tag relevant code. Fully assert the output.
 6. Register **new** functions in the `tests!` macro in `integration-tester/src/lib.rs`.
 7. Run `make update-readme-test-refs` from `integration-tester/`.

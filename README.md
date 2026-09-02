@@ -66,15 +66,50 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 
 ### Insert
 
-TODO
+| ID    | Category    | Type     | Case                     | Status |
+| ----- | ----------- | -------- | ------------------------ | ------ |
+| I1    | Insert      |          | All columns              |        |
+| I2    | Insert      |          | Specific columns         |        |
+| I3    | Insert      |          | Tuple of columns         |        |
+| I4    | Insert      |          | Insertable               |        |
+| I5    | Insert      |          | Default values           |        |
+| IB1   | Batch       |          | Multiple rows            |        |
+| IS1   | From select |          | Insert from select       |        |
+| IV1   | Values      | null     | `NULL`                   |        |
+| IV2   | Values      | null     | `Some`                   |        |
+| IE1   | Execute     |          | Affected row count       |        |
 
 ### Update
 
-TODO
+| ID    | Category  | Type     | Case                     | Status |
+| ----- | --------- | -------- | ------------------------ | ------ |
+| U1    | Update    |          | All rows                 |        |
+| U2    | Update    |          | Single column            |        |
+| U3    | Update    |          | Multiple columns         |        |
+| U4    | Update    |          | AsChangeset              |        |
+| U5    | Update    |          | Identifiable             |        |
+| UW1   | Where     | int      | `=` int                  |        |
+| UW2   | Where     | Compound | `and`                    |        |
+| UW3   | Where     | int      | `in` int[]               |        |
+| UW4   | Where     | string   | `=` string               |        |
+| US1   | Set       | null     | Set `NULL`               |        |
+| US2   | Set       | null     | Set `Some`               |        |
+| US3   | Set       |          | Expression               |        |
+| UE1   | Execute   |          | Affected row count       |        |
+| UE2   | Execute   |          | Zero rows                |        |
 
 ### Delete
 
-TODO
+| ID    | Category  | Type     | Case                     | Status |
+| ----- | --------- | -------- | ------------------------ | ------ |
+| Del1  | Delete    |          | All rows                 |        |
+| Del2  | Delete    |          | Identifiable             |        |
+| DelW1 | Where     | int      | `=` int                  |        |
+| DelW2 | Where     | Compound | `and`                    |        |
+| DelW3 | Where     | int      | `in` int[]               |        |
+| DelW4 | Where     | string   | `=` string               |        |
+| DelE1 | Execute   |          | Affected row count       |        |
+| DelE2 | Execute   |          | Zero rows                |        |
 
 ### SQLite extras
 
