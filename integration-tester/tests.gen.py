@@ -59,6 +59,62 @@ class TestIntegration(unittest.TestCase):
     with urllib.request.urlopen(f'{BASE_URL}test_queryable_by_name') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_queryable_by_name passed')
 
+  def test_insert_values(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_insert_values') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_insert_values passed')
+
+  def test_insert_default_values(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_insert_default_values') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_insert_default_values passed')
+
+  def test_insert_batch(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_insert_batch') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_insert_batch passed')
+
+  def test_insert_from_select(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_insert_from_select') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_insert_from_select passed')
+
+  def test_update_all_rows(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_update_all_rows') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_update_all_rows passed')
+
+  def test_update_columns(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_update_columns') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_update_columns passed')
+
+  def test_update_changeset(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_update_changeset') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_update_changeset passed')
+
+  def test_update_where(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_update_where') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_update_where passed')
+
+  def test_update_set(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_update_set') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_update_set passed')
+
+  def test_update_zero_rows(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_update_zero_rows') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_update_zero_rows passed')
+
+  def test_delete_all(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_delete_all') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_delete_all passed')
+
+  def test_delete_identifiable(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_delete_identifiable') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_delete_identifiable passed')
+
+  def test_delete_where(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_delete_where') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_delete_where passed')
+
+  def test_delete_zero_rows(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_delete_zero_rows') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_delete_zero_rows passed')
+
 
 if __name__ == '__main__':
     unittest.main()

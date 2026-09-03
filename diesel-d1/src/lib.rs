@@ -36,6 +36,18 @@ pub struct D1Connection {
     binding: D1Database,
 }
 
+impl AsRef<D1Database> for D1Connection {
+    fn as_ref(&self) -> &D1Database {
+        &self.binding
+    }
+}
+
+impl AsMut<D1Database> for D1Connection {
+    fn as_mut(&mut self) -> &mut D1Database {
+        &mut self.binding
+    }
+}
+
 impl D1Connection {
     pub fn new(env: &Env, name: &str) -> worker::Result<Self> {
         let binding: D1Database = env.d1(name)?;

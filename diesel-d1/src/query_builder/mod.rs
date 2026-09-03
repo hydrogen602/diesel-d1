@@ -4,8 +4,8 @@ use super::backend::D1Backend;
 use diesel::query_builder::QueryBuilder;
 use diesel::result::QueryResult;
 
+mod insert;
 mod limit_offset;
-// mod query_fragment_impls;
 mod returning;
 
 /// Constructs SQL queries for use with the SQLite backend

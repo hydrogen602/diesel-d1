@@ -1,9 +1,15 @@
 use diesel_d1::D1Connection;
 use worker::*;
 
+use crate::delete_tests::*;
+use crate::insert_tests::*;
 use crate::select_tests::*;
+use crate::update_tests::*;
 
+mod delete_tests;
+mod insert_tests;
 mod select_tests;
+mod update_tests;
 
 macro_rules! tests {
     ($($test_name:ident),*) => {
@@ -37,7 +43,21 @@ tests!(
     test_order_by,
     test_limit_offset,
     test_joins_on,
-    test_queryable_by_name
+    test_queryable_by_name,
+    test_insert_values,
+    test_insert_default_values,
+    test_insert_batch,
+    test_insert_from_select,
+    test_update_all_rows,
+    test_update_columns,
+    test_update_changeset,
+    test_update_where,
+    test_update_set,
+    test_update_zero_rows,
+    test_delete_all,
+    test_delete_identifiable,
+    test_delete_where,
+    test_delete_zero_rows
 );
 
 pub const D1_NAME: &str = "diesel_d1_test";
