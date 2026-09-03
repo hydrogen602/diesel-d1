@@ -18,7 +18,7 @@ use transaction_manager::D1TransactionManager;
 use utils::{D1Error, SendableFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use worker::{D1Database, D1PreparedStatement, Env, console_error};
+use worker::{D1Database, D1PreparedStatement, Env};
 
 use crate::bind_collector::D1TypeOwnable;
 
@@ -128,20 +128,21 @@ impl AsyncConnectionCore for D1Connection {
         T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
     {
         let source = source.as_query();
-        let result = prepare_statement_sql(source, &self.binding);
+        match prepare_statement_sql(source, &self.binding) {
+            Ok(result) => SendableFuture(async move {
+                let rows = match raw_with_column_names(result).await {
+                    Ok(rows) => rows,
+                    Err(err) => {
+                        todo!("Error handling: {:?}", err);
+                    }
+                };
 
-        SendableFuture(async move {
-            let rows = match raw_with_column_names(result).await {
-                Ok(rows) => rows,
-                Err(err) => {
-                    todo!("Error handling: {:?}", err);
-                }
-            };
-
-            // we could maybe inject our own limit and offset to fetch the results in multiple pieces.
-            Ok(stream::iter(rows).boxed())
-        })
-        .boxed()
+                // we could maybe inject our own limit and offset to fetch the results in multiple pieces.
+                Ok(stream::iter(rows).boxed())
+            })
+            .boxed(),
+            Err(err) => SendableFuture(async move { Err(err) }).boxed(),
+        }
     }
 
     #[doc(hidden)]
@@ -152,29 +153,31 @@ impl AsyncConnectionCore for D1Connection {
     where
         T: QueryFragment<Self::Backend> + QueryId + 'query,
     {
-        let result = prepare_statement_sql(source, &self.binding);
-        SendableFuture(async move {
-            let result = match result.run().await {
-                Ok(res) => res,
-                Err(err) => {
-                    todo!("Error handling: {:?}", err);
+        match prepare_statement_sql(source, &self.binding) {
+            Ok(result) => SendableFuture(async move {
+                let result = match result.run().await {
+                    Ok(res) => res,
+                    Err(err) => {
+                        todo!("Error handling: {:?}", err);
+                    }
+                };
+
+                if let Some(error_str) = result.error() {
+                    return Err(diesel::result::Error::DatabaseError(
+                        diesel::result::DatabaseErrorKind::Unknown,
+                        Box::new(D1Error { message: error_str }),
+                    ));
                 }
-            };
 
-            if let Some(error_str) = result.error() {
-                return Err(diesel::result::Error::DatabaseError(
-                    diesel::result::DatabaseErrorKind::Unknown,
-                    Box::new(D1Error { message: error_str }),
-                ));
-            }
+                // if it's successful, meta exists with a `changes` key that is a number
+                let meta = result.meta().unwrap().unwrap();
+                let value = meta.changes.unwrap();
 
-            // if it's successful, meta exists with a `changes` key that is a number
-            let meta = result.meta().unwrap().unwrap();
-            let value = meta.changes.unwrap();
-
-            Ok(value)
-        })
-        .boxed()
+                Ok(value)
+            })
+            .boxed(),
+            Err(err) => SendableFuture(async move { Err(err) }).boxed(),
+        }
     }
 }
 
@@ -196,35 +199,27 @@ where
     Ok(array)
 }
 
-fn prepare_statement_sql<'conn, 'query, T>(source: T, binding: &D1Database) -> D1PreparedStatement
+fn prepare_statement_sql<'query, T>(
+    source: T,
+    binding: &D1Database,
+) -> QueryResult<D1PreparedStatement>
 where
     T: QueryFragment<D1Backend> + QueryId + 'query,
 {
-    // let mut query_builder = D1QueryBuilder::default();
-    // source.to_sql(&mut query_builder, &D1Backend).unwrap();
-    // let result = match binding.prepare(&query_builder.sql) {
-    //     Ok(res) => res,
-    //     Err(err) => {
-    //         console_error!("{:?}", err);
-    //         panic!("not supposed to happen d1preparedstatement");
-    //     }
-    // };
-
     let mut query_builder = D1QueryBuilder::default();
     source.to_sql(&mut query_builder, &D1Backend).unwrap();
     let sql = query_builder.sql;
 
     let result = binding.prepare(sql);
 
-    let binds = construct_bind_data(&source).unwrap();
+    let binds = construct_bind_data(&source)?;
 
-    match result.bind_refs(binds.iter()) {
-        Ok(res) => res,
-        Err(err) => {
-            console_error!("{:?}", err);
-            panic!("not supposed to happen bind");
+    result.bind_refs(binds.iter()).map_err(|err| {
+        D1Error {
+            message: err.to_string(),
         }
-    }
+        .into()
+    })
 }
 
 /// D1 rust bindings don't support this call yet, but the underlying JS API does.

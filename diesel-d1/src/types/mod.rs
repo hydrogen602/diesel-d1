@@ -107,11 +107,15 @@ impl HasSqlType<sql_types::BigInt> for D1Backend {
     }
 }
 
+fn exceeds_js_safe_integer(value: i64) -> bool {
+    value > NUMBER_MAX_SAFE_INTEGER || value < -NUMBER_MAX_SAFE_INTEGER
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum BigIntError {
     #[error("Number is not an integer")]
     NotAnInteger(f64),
-    #[error("Number exceeds Number.MAX_SAFE_INTEGER")]
+    #[error("integer {0} is outside the Number.MAX_SAFE_INTEGER range")]
     NotASafeInteger(i64),
 }
 
@@ -122,7 +126,7 @@ impl FromSql<sql_types::BigInt, D1Backend> for i64 {
             return Err(BigIntError::NotAnInteger(text).into());
         }
         let int = text as i64;
-        if int.abs() > NUMBER_MAX_SAFE_INTEGER {
+        if exceeds_js_safe_integer(int) {
             return Err(BigIntError::NotASafeInteger(int).into());
         }
         Ok(int)
@@ -131,7 +135,7 @@ impl FromSql<sql_types::BigInt, D1Backend> for i64 {
 
 impl ToSql<sql_types::BigInt, D1Backend> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
-        if self.abs() > NUMBER_MAX_SAFE_INTEGER {
+        if exceeds_js_safe_integer(*self) {
             return Err(BigIntError::NotASafeInteger(*self).into());
         }
         out.set_value(*self as f64);
@@ -223,8 +227,7 @@ impl HasSqlType<sql_types::Binary> for D1Backend {
 
 impl FromSql<sql_types::Binary, D1Backend> for Vec<u8> {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_blob();
-        Ok(text)
+        value.read_blob()
     }
 }
 

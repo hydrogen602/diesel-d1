@@ -26,6 +26,14 @@ mod sample_schema {
 
     diesel::joinable!(posts -> users (user_id));
     diesel::allow_tables_to_appear_in_same_query!(posts, users);
+
+    diesel::table! {
+        typed (id) {
+            id -> Integer,
+            score -> Double,
+            payload -> Nullable<Binary>,
+        }
+    }
 }
 
 #[derive(Queryable, Debug)]
@@ -80,6 +88,19 @@ fn assert_post(row: &Post, id: i32, title: &str, body: Option<&str>, user_id: i3
     assert_eq!(row.title, title);
     assert_eq!(row.body.as_deref(), body);
     assert_eq!(row.user_id, user_id);
+}
+
+#[derive(Queryable, Debug)]
+struct Typed {
+    id: i32,
+    score: f64,
+    payload: Option<Vec<u8>>,
+}
+
+fn assert_typed(row: &Typed, id: i32, score: f64, payload: Option<&[u8]>) {
+    assert_eq!(row.id, id);
+    assert_eq!(row.score, score);
+    assert_eq!(row.payload.as_deref(), payload);
 }
 
 pub async fn test_users(env: &Env) {
@@ -483,6 +504,156 @@ pub async fn test_where_compound(env: &Env) {
     assert_user(&rows[1], 3, "Jim Beam", "2021-01-03");
 }
 
+pub async fn test_where_other_types(env: &Env) {
+    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+
+    // Test: SW26 - `<` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.lt(2.5))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+
+    // Test: SW27 - `>` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.gt(3.5))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_typed(&rows[0], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW28 - `<=` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.le(2.5))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+    assert_typed(&rows[1], 2, 2.5, Some(&[0x02]));
+
+    // Test: SW29 - `>=` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.ge(3.5))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 3, 3.5, None);
+    assert_typed(&rows[1], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW30 - `=` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.eq(2.5));
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_typed(&rows[0], 2, 2.5, Some(&[0x02]));
+
+    // Test: SW31 - `<>` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.ne(2.5))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 3);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+    assert_typed(&rows[1], 3, 3.5, None);
+    assert_typed(&rows[2], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW32 - `in` real[]
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.eq_any(vec![1.5, 4.5]))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+    assert_typed(&rows[1], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW33 - `not in` real[]
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.ne_all(vec![1.5, 4.5]))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 2, 2.5, Some(&[0x02]));
+    assert_typed(&rows[1], 3, 3.5, None);
+
+    // Test: SW34 - `between` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.between(2.0, 4.0))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 2, 2.5, Some(&[0x02]));
+    assert_typed(&rows[1], 3, 3.5, None);
+
+    // Test: SW35 - `not between` real
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::score.not_between(2.0, 4.0))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+    assert_typed(&rows[1], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW36 - `=` blob
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::payload.eq(Some(vec![0x01])));
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+
+    // Test: SW37 - `<>` blob
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::payload.ne(Some(vec![0x01])))
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 2, 2.5, Some(&[0x02]));
+    assert_typed(&rows[1], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW38 - `in` blob[]
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(
+            sample_schema::typed::payload.eq_any(vec![Some(vec![0x01]), Some(vec![0x01, 0x02])]),
+        )
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+    assert_typed(&rows[1], 4, 4.5, Some(&[0x01, 0x02]));
+
+    // Test: SW39 - `is null`
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::payload.is_null());
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_typed(&rows[0], 3, 3.5, None);
+
+    // Test: SW40 - `is not null`
+    let query = sample_schema::typed::table
+        .select(sample_schema::typed::all_columns)
+        .filter(sample_schema::typed::payload.is_not_null())
+        .order(sample_schema::typed::id);
+    let rows: Vec<Typed> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 3);
+    assert_typed(&rows[0], 1, 1.5, Some(&[0x01]));
+    assert_typed(&rows[1], 2, 2.5, Some(&[0x02]));
+    assert_typed(&rows[2], 4, 4.5, Some(&[0x01, 0x02]));
+}
+
 pub async fn test_order_by(env: &Env) {
     let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
 
@@ -710,6 +881,170 @@ pub async fn test_joins_on(env: &Env) {
     assert!(rows[4].1.is_none());
     assert_user(&rows[5].0, 4, "Jane Doe", "2021-01-04");
     assert!(rows[5].1.is_none());
+}
+
+pub async fn test_joins_on_non_fk(env: &Env) {
+    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+
+    // Test: SJ7 - Inner join ON non-FK
+    // Test: SJOn1 - `=` non-FK int
+    let query = sample_schema::posts::table
+        .inner_join(
+            sample_schema::users::table.on(sample_schema::posts::id.eq(sample_schema::users::id)),
+        )
+        .select((
+            sample_schema::posts::all_columns,
+            sample_schema::users::all_columns,
+        ))
+        .order(sample_schema::posts::id);
+    let rows: Vec<(Post, User)> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 4);
+    assert_post(&rows[0].0, 1, "Hello World", Some("This is a test post"), 1);
+    assert_user(&rows[0].1, 1, "John Doe", "2021-01-01");
+    assert_post(
+        &rows[1].0,
+        2,
+        "Another Post",
+        Some("This is another test post"),
+        1,
+    );
+    assert_user(&rows[1].1, 2, "Jane Smith", "2021-01-02");
+    assert_post(&rows[2].0, 3, "Post #3", Some("Lots of words"), 2);
+    assert_user(&rows[2].1, 3, "Jim Beam", "2021-01-03");
+    assert_post(&rows[3].0, 4, "Post #4", Some("Even more words"), 2);
+    assert_user(&rows[3].1, 4, "Jane Doe", "2021-01-04");
+
+    // Test: SJ8 - Left join ON non-FK
+    let query = sample_schema::posts::table
+        .left_join(
+            sample_schema::users::table.on(sample_schema::posts::id.eq(sample_schema::users::id)),
+        )
+        .select((
+            sample_schema::posts::all_columns,
+            sample_schema::users::all_columns.nullable(),
+        ))
+        .order(sample_schema::posts::id);
+    let rows: Vec<(Post, Option<User>)> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 5);
+    assert_post(&rows[0].0, 1, "Hello World", Some("This is a test post"), 1);
+    assert_user(rows[0].1.as_ref().unwrap(), 1, "John Doe", "2021-01-01");
+    assert_post(
+        &rows[1].0,
+        2,
+        "Another Post",
+        Some("This is another test post"),
+        1,
+    );
+    assert_user(rows[1].1.as_ref().unwrap(), 2, "Jane Smith", "2021-01-02");
+    assert_post(&rows[2].0, 3, "Post #3", Some("Lots of words"), 2);
+    assert_user(rows[2].1.as_ref().unwrap(), 3, "Jim Beam", "2021-01-03");
+    assert_post(&rows[3].0, 4, "Post #4", Some("Even more words"), 2);
+    assert_user(rows[3].1.as_ref().unwrap(), 4, "Jane Doe", "2021-01-04");
+    assert_post(&rows[4].0, 5, "Post #5", Some("Imagine a post here"), 2);
+    assert!(rows[4].1.is_none());
+
+    // Test: SJOn2 - Expression
+    let query = sample_schema::posts::table
+        .inner_join(
+            sample_schema::users::table
+                .on(sample_schema::posts::id.eq(sample_schema::users::id + 1)),
+        )
+        .select((
+            sample_schema::posts::all_columns,
+            sample_schema::users::all_columns,
+        ))
+        .order(sample_schema::posts::id);
+    let rows: Vec<(Post, User)> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 4);
+    assert_post(
+        &rows[0].0,
+        2,
+        "Another Post",
+        Some("This is another test post"),
+        1,
+    );
+    assert_user(&rows[0].1, 1, "John Doe", "2021-01-01");
+    assert_post(&rows[1].0, 3, "Post #3", Some("Lots of words"), 2);
+    assert_user(&rows[1].1, 2, "Jane Smith", "2021-01-02");
+    assert_post(&rows[2].0, 4, "Post #4", Some("Even more words"), 2);
+    assert_user(&rows[2].1, 3, "Jim Beam", "2021-01-03");
+    assert_post(&rows[3].0, 5, "Post #5", Some("Imagine a post here"), 2);
+    assert_user(&rows[3].1, 4, "Jane Doe", "2021-01-04");
+
+    // Test: SJOn3 - `=` string
+    let query = sample_schema::posts::table
+        .inner_join(sample_schema::users::table.on(sample_schema::users::name.eq("Jim Beam")))
+        .select((
+            sample_schema::posts::all_columns,
+            sample_schema::users::name,
+        ))
+        .order(sample_schema::posts::id);
+    let rows: Vec<(Post, String)> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 5);
+    assert_post(&rows[0].0, 1, "Hello World", Some("This is a test post"), 1);
+    assert_eq!(rows[0].1, "Jim Beam");
+    assert_post(
+        &rows[1].0,
+        2,
+        "Another Post",
+        Some("This is another test post"),
+        1,
+    );
+    assert_eq!(rows[1].1, "Jim Beam");
+    assert_post(&rows[2].0, 3, "Post #3", Some("Lots of words"), 2);
+    assert_eq!(rows[2].1, "Jim Beam");
+    assert_post(&rows[3].0, 4, "Post #4", Some("Even more words"), 2);
+    assert_eq!(rows[3].1, "Jim Beam");
+    assert_post(&rows[4].0, 5, "Post #5", Some("Imagine a post here"), 2);
+    assert_eq!(rows[4].1, "Jim Beam");
+
+    // Test: SJOn4 - `and`
+    let query = sample_schema::posts::table
+        .inner_join(
+            sample_schema::users::table.on(sample_schema::posts::id
+                .eq(sample_schema::users::id)
+                .and(sample_schema::users::name.like("Jane%"))),
+        )
+        .select((
+            sample_schema::posts::all_columns,
+            sample_schema::users::all_columns,
+        ))
+        .order(sample_schema::posts::id);
+    let rows: Vec<(Post, User)> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_post(
+        &rows[0].0,
+        2,
+        "Another Post",
+        Some("This is another test post"),
+        1,
+    );
+    assert_user(&rows[0].1, 2, "Jane Smith", "2021-01-02");
+    assert_post(&rows[1].0, 4, "Post #4", Some("Even more words"), 2);
+    assert_user(&rows[1].1, 4, "Jane Doe", "2021-01-04");
+
+    let (left_users, right_users) = diesel::alias!(
+        sample_schema::users as left_users,
+        sample_schema::users as right_users
+    );
+
+    // Test: SJ9 - Self join ON
+    let query = left_users
+        .inner_join(
+            right_users.on(left_users
+                .field(sample_schema::users::id)
+                .lt(right_users.field(sample_schema::users::id))
+                .and(left_users.field(sample_schema::users::name).like("%Doe%"))
+                .and(right_users.field(sample_schema::users::name).like("%Doe%"))),
+        )
+        .select((
+            left_users.fields(sample_schema::users::all_columns),
+            right_users.fields(sample_schema::users::all_columns),
+        ));
+    let rows: Vec<(User, User)> = query.load(&mut d1).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_user(&rows[0].0, 1, "John Doe", "2021-01-01");
+    assert_user(&rows[0].1, 4, "Jane Doe", "2021-01-04");
 }
 
 pub async fn test_queryable_by_name(env: &Env) {

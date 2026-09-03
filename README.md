@@ -48,6 +48,21 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 | SW23  | Where     | Compound | `and`                    | ✅     |
 | SW24  | Where     | Compound | `or`                     | ✅     |
 | SW25  | Where     | Compound | `not`                    | ✅     |
+| SW26  | Where     | real     | `<` real                 | ✅     |
+| SW27  | Where     | real     | `>` real                 | ✅     |
+| SW28  | Where     | real     | `<=` real                | ✅     |
+| SW29  | Where     | real     | `>=` real                | ✅     |
+| SW30  | Where     | real     | `=` real                 | ✅     |
+| SW31  | Where     | real     | `<>` real                | ✅     |
+| SW32  | Where     | real     | `in` real[]              | ✅     |
+| SW33  | Where     | real     | `not in` real[]          | ✅     |
+| SW34  | Where     | real     | `between` real           | ✅     |
+| SW35  | Where     | real     | `not between` real       | ✅     |
+| SW36  | Where     | blob     | `=` blob                 | ✅     |
+| SW37  | Where     | blob     | `<>` blob                | ✅     |
+| SW38  | Where     | blob     | `in` blob[]              | ✅     |
+| SW39  | Where     | blob     | `is null`                | ✅     |
+| SW40  | Where     | blob     | `is not null`            | ✅     |
 | SO1   | Order by  |          | Single column            | ✅     |
 | SO2   | Order by  |          | Multiple columns         | ✅     |
 | SO3   | Order by  |          | Direction                | ✅     |
@@ -59,6 +74,13 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 | SJ4   | Join      |          | Inner join ON            | ✅     |
 | SJ5   | Join      |          | Left join ON             | ✅     |
 | SJ6   | Join      |          | Left outer join ON       | ✅     |
+| SJ7   | Join      |          | Inner join ON non-FK     | ✅     |
+| SJ8   | Join      |          | Left join ON non-FK      | ✅     |
+| SJ9   | Join      |          | Self join ON             | ✅     |
+| SJOn1 | Join ON   | int      | `=` non-FK int           | ✅     |
+| SJOn2 | Join ON   | int      | Expression               | ✅     |
+| SJOn3 | Join ON   | string   | `=` string               | ✅     |
+| SJOn4 | Join ON   | Compound | `and`                    | ✅     |
 | SQ1   | Queryable |          | Queryable                | ✅     |
 | SQ2   | Queryable |          | QueryableByName          | ✅     |
 | SQ3   | Queryable |          | Tuple of Queryable       | ✅     |
@@ -66,86 +88,89 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 
 ### Insert
 
-| ID    | Category    | Type     | Case                     | Status |
-| ----- | ----------- | -------- | ------------------------ | ------ |
-| I1    | Insert      |          | All columns              | ✅     |
-| I2    | Insert      |          | Specific columns         | ✅     |
-| I3    | Insert      |          | Tuple of columns         | ✅     |
-| I4    | Insert      |          | Insertable               | ✅     |
-| I5    | Insert      |          | Default values           | ✅     |
-| IB1   | Batch       |          | Multiple rows            | ✅     |
-| IS1   | From select |          | Insert from select       | ✅     |
-| IV1   | Values      | null     | `NULL`                   | ✅     |
-| IV2   | Values      | null     | `Some`                   | ✅     |
-| IE1   | Execute     |          | Affected row count       | ✅     |
+| ID  | Category    | Type | Case               | Status |
+| --- | ----------- | ---- | ------------------ | ------ |
+| I1  | Insert      |      | All columns        | ✅     |
+| I2  | Insert      |      | Specific columns   | ✅     |
+| I3  | Insert      |      | Tuple of columns   | ✅     |
+| I4  | Insert      |      | Insertable         | ✅     |
+| I5  | Insert      |      | Default values     | ✅     |
+| IB1 | Batch       |      | Multiple rows      | ✅     |
+| IS1 | From select |      | Insert from select | ✅     |
+| IV1 | Values      | null | `NULL`             | ✅     |
+| IV2 | Values      | null | `Some`             | ✅     |
+| IE1 | Execute     |      | Affected row count | ✅     |
 
 ### Update
 
-| ID    | Category  | Type     | Case                     | Status |
-| ----- | --------- | -------- | ------------------------ | ------ |
-| U1    | Update    |          | All rows                 | ✅     |
-| U2    | Update    |          | Single column            | ✅     |
-| U3    | Update    |          | Multiple columns         | ✅     |
-| U4    | Update    |          | AsChangeset              | ✅     |
-| U5    | Update    |          | Identifiable             | ✅     |
-| UW1   | Where     | int      | `=` int                  | ✅     |
-| UW2   | Where     | Compound | `and`                    | ✅     |
-| UW3   | Where     | int      | `in` int[]               | ✅     |
-| UW4   | Where     | string   | `=` string               | ✅     |
-| US1   | Set       | null     | Set `NULL`               | ✅     |
-| US2   | Set       | null     | Set `Some`               | ✅     |
-| US3   | Set       |          | Expression               | ✅     |
-| UE1   | Execute   |          | Affected row count       | ✅     |
-| UE2   | Execute   |          | Zero rows                | ✅     |
+| ID  | Category | Type     | Case               | Status |
+| --- | -------- | -------- | ------------------ | ------ |
+| U1  | Update   |          | All rows           | ✅     |
+| U2  | Update   |          | Single column      | ✅     |
+| U3  | Update   |          | Multiple columns   | ✅     |
+| U4  | Update   |          | AsChangeset        | ✅     |
+| U5  | Update   |          | Identifiable       | ✅     |
+| UW1 | Where    | int      | `=` int            | ✅     |
+| UW2 | Where    | Compound | `and`              | ✅     |
+| UW3 | Where    | int      | `in` int[]         | ✅     |
+| UW4 | Where    | string   | `=` string         | ✅     |
+| US1 | Set      | null     | Set `NULL`         | ✅     |
+| US2 | Set      | null     | Set `Some`         | ✅     |
+| US3 | Set      |          | Expression         | ✅     |
+| UE1 | Execute  |          | Affected row count | ✅     |
+| UE2 | Execute  |          | Zero rows          | ✅     |
 
 ### Delete
 
-| ID    | Category  | Type     | Case                     | Status |
-| ----- | --------- | -------- | ------------------------ | ------ |
-| Del1  | Delete    |          | All rows                 | ✅     |
-| Del2  | Delete    |          | Identifiable             | ✅     |
-| DelW1 | Where     | int      | `=` int                  | ✅     |
-| DelW2 | Where     | Compound | `and`                    | ✅     |
-| DelW3 | Where     | int      | `in` int[]               | ✅     |
-| DelW4 | Where     | string   | `=` string               | ✅     |
-| DelE1 | Execute   |          | Affected row count       | ✅     |
-| DelE2 | Execute   |          | Zero rows                | ✅     |
+| ID    | Category | Type     | Case               | Status |
+| ----- | -------- | -------- | ------------------ | ------ |
+| Del1  | Delete   |          | All rows           | ✅     |
+| Del2  | Delete   |          | Identifiable       | ✅     |
+| DelW1 | Where    | int      | `=` int            | ✅     |
+| DelW2 | Where    | Compound | `and`              | ✅     |
+| DelW3 | Where    | int      | `in` int[]         | ✅     |
+| DelW4 | Where    | string   | `=` string         | ✅     |
+| DelE1 | Execute  |          | Affected row count | ✅     |
+| DelE2 | Execute  |          | Zero rows          | ✅     |
 
 ### SQLite extras
 
 #### Upsert
 
-| ID    | Category  | Type     | Case                     | Status |
-| ----- | --------- | -------- | ------------------------ | ------ |
-| Up1   | Upsert    |          | DO NOTHING               | ✅     |
-| Up2   | Upsert    |          | DO NOTHING on target     | ✅     |
-| Up3   | Upsert    |          | DO UPDATE SET            | ✅     |
-| Up4   | Upsert    |          | excluded                 | ✅     |
-| UpB1  | Batch     |          | Multiple rows            | ✅     |
-| UpW1  | Where     |          | WHERE on DO UPDATE       | ✅     |
-| UpE1  | Execute   |          | Inserted row count       | ✅     |
-| UpE2  | Execute   |          | Conflict no-op count     | ✅     |
+| ID   | Category | Type | Case                 | Status |
+| ---- | -------- | ---- | -------------------- | ------ |
+| Up1  | Upsert   |      | DO NOTHING           | ✅     |
+| Up2  | Upsert   |      | DO NOTHING on target | ✅     |
+| Up3  | Upsert   |      | DO UPDATE SET        | ✅     |
+| Up4  | Upsert   |      | excluded             | ✅     |
+| UpB1 | Batch    |      | Multiple rows        | ✅     |
+| UpW1 | Where    |      | WHERE on DO UPDATE   | ✅     |
+| UpE1 | Execute  |      | Inserted row count   | ✅     |
+| UpE2 | Execute  |      | Conflict no-op count | ✅     |
 
 #### Returning
 
-| ID    | Category  | Type     | Case                     | Status |
-| ----- | --------- | -------- | ------------------------ | ------ |
-| R1    | Returning |          | INSERT all columns       | ✅     |
-| R2    | Returning |          | INSERT specific columns  | ✅     |
-| R3    | Returning |          | UPDATE all columns       | ✅     |
-| R4    | Returning |          | UPDATE specific columns  | ✅     |
-| R5    | Returning |          | DELETE all columns       | ✅     |
-| R6    | Returning |          | DELETE specific columns  | ✅     |
-| R7    | Returning |          | Upsert                   | ✅     |
-| R8    | Returning |          | Multiple rows            | ✅     |
-| RE1   | Execute   |          | Zero rows                | ✅     |
+| ID  | Category  | Type | Case                    | Status |
+| --- | --------- | ---- | ----------------------- | ------ |
+| R1  | Returning |      | INSERT all columns      | ✅     |
+| R2  | Returning |      | INSERT specific columns | ✅     |
+| R3  | Returning |      | UPDATE all columns      | ✅     |
+| R4  | Returning |      | UPDATE specific columns | ✅     |
+| R5  | Returning |      | DELETE all columns      | ✅     |
+| R6  | Returning |      | DELETE specific columns | ✅     |
+| R7  | Returning |      | Upsert                  | ✅     |
+| R8  | Returning |      | Multiple rows           | ✅     |
+| RE1 | Execute   |      | Zero rows               | ✅     |
 
 ### D1 extras
 
-| ID   | Category | Type | Case                                                        | Status |
-| ---- | -------- | ---- | ----------------------------------------------------------- | ------ |
-| D1T1 | D1       |      | Transactions are rejected                                   |        |
-| D1T2 | D1       |      | Integers larger than `Number.MAX_SAFE_INTEGER` are rejected |        |
+| ID   | Category | Type | Case                                                          | Status |
+| ---- | -------- | ---- | ------------------------------------------------------------- | ------ |
+| D1T1 | D1       |      | Transactions are rejected                                     |        |
+| D1T2 | D1       | int  | Integers larger than `Number.MAX_SAFE_INTEGER` are rejected   | ✅     |
+| D1T3 | D1       | int  | Integers smaller than `-Number.MAX_SAFE_INTEGER` are rejected | ✅     |
+| D1T4 | D1       | int  | Unsafe integers fail to decode                                | ✅     |
+| D1T5 | D1       | real | Reals beyond `Number.MAX_SAFE_INTEGER` succeed                | ✅     |
 
 Other features todo:
 

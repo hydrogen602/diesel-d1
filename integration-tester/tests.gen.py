@@ -43,6 +43,10 @@ class TestIntegration(unittest.TestCase):
     with urllib.request.urlopen(f'{BASE_URL}test_where_compound') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_where_compound passed')
 
+  def test_where_other_types(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_where_other_types') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_where_other_types passed')
+
   def test_order_by(self):
     with urllib.request.urlopen(f'{BASE_URL}test_order_by') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_order_by passed')
@@ -54,6 +58,10 @@ class TestIntegration(unittest.TestCase):
   def test_joins_on(self):
     with urllib.request.urlopen(f'{BASE_URL}test_joins_on') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_joins_on passed')
+
+  def test_joins_on_non_fk(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_joins_on_non_fk') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_joins_on_non_fk passed')
 
   def test_queryable_by_name(self):
     with urllib.request.urlopen(f'{BASE_URL}test_queryable_by_name') as response:
@@ -150,6 +158,10 @@ class TestIntegration(unittest.TestCase):
   def test_returning_zero_rows(self):
     with urllib.request.urlopen(f'{BASE_URL}test_returning_zero_rows') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_returning_zero_rows passed')
+
+  def test_js_safe_integer_limits(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_js_safe_integer_limits') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_js_safe_integer_limits passed')
 
 
 if __name__ == '__main__':

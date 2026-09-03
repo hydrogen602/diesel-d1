@@ -1,6 +1,7 @@
 use diesel_d1::D1Connection;
 use worker::*;
 
+use crate::d1_tests::*;
 use crate::delete_tests::*;
 use crate::insert_tests::*;
 use crate::returning_tests::*;
@@ -8,6 +9,7 @@ use crate::select_tests::*;
 use crate::update_tests::*;
 use crate::upsert_tests::*;
 
+mod d1_tests;
 mod delete_tests;
 mod insert_tests;
 mod returning_tests;
@@ -44,9 +46,11 @@ tests!(
     test_where_int,
     test_where_string,
     test_where_compound,
+    test_where_other_types,
     test_order_by,
     test_limit_offset,
     test_joins_on,
+    test_joins_on_non_fk,
     test_queryable_by_name,
     test_insert_values,
     test_insert_default_values,
@@ -70,7 +74,8 @@ tests!(
     test_returning_update,
     test_returning_delete,
     test_returning_upsert,
-    test_returning_zero_rows
+    test_returning_zero_rows,
+    test_js_safe_integer_limits
 );
 
 pub const D1_NAME: &str = "diesel_d1_test";
