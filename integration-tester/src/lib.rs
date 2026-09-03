@@ -3,13 +3,17 @@ use worker::*;
 
 use crate::delete_tests::*;
 use crate::insert_tests::*;
+use crate::returning_tests::*;
 use crate::select_tests::*;
 use crate::update_tests::*;
+use crate::upsert_tests::*;
 
 mod delete_tests;
 mod insert_tests;
+mod returning_tests;
 mod select_tests;
 mod update_tests;
+mod upsert_tests;
 
 macro_rules! tests {
     ($($test_name:ident),*) => {
@@ -57,7 +61,16 @@ tests!(
     test_delete_all,
     test_delete_identifiable,
     test_delete_where,
-    test_delete_zero_rows
+    test_delete_zero_rows,
+    test_upsert_do_nothing,
+    test_upsert_do_update,
+    test_upsert_batch,
+    test_upsert_where,
+    test_returning_insert,
+    test_returning_update,
+    test_returning_delete,
+    test_returning_upsert,
+    test_returning_zero_rows
 );
 
 pub const D1_NAME: &str = "diesel_d1_test";

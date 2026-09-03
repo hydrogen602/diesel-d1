@@ -115,11 +115,30 @@ At the moment, this only supports Cloudflare Workers via the D1 binding (therefo
 
 #### Upsert
 
-TODO
+| ID    | Category  | Type     | Case                     | Status |
+| ----- | --------- | -------- | ------------------------ | ------ |
+| Up1   | Upsert    |          | DO NOTHING               | ✅     |
+| Up2   | Upsert    |          | DO NOTHING on target     | ✅     |
+| Up3   | Upsert    |          | DO UPDATE SET            | ✅     |
+| Up4   | Upsert    |          | excluded                 | ✅     |
+| UpB1  | Batch     |          | Multiple rows            | ✅     |
+| UpW1  | Where     |          | WHERE on DO UPDATE       | ✅     |
+| UpE1  | Execute   |          | Inserted row count       | ✅     |
+| UpE2  | Execute   |          | Conflict no-op count     | ✅     |
 
 #### Returning
 
-TODO
+| ID    | Category  | Type     | Case                     | Status |
+| ----- | --------- | -------- | ------------------------ | ------ |
+| R1    | Returning |          | INSERT all columns       | ✅     |
+| R2    | Returning |          | INSERT specific columns  | ✅     |
+| R3    | Returning |          | UPDATE all columns       | ✅     |
+| R4    | Returning |          | UPDATE specific columns  | ✅     |
+| R5    | Returning |          | DELETE all columns       | ✅     |
+| R6    | Returning |          | DELETE specific columns  | ✅     |
+| R7    | Returning |          | Upsert                   | ✅     |
+| R8    | Returning |          | Multiple rows            | ✅     |
+| RE1   | Execute   |          | Zero rows                | ✅     |
 
 ### D1 extras
 

@@ -1,8 +1,5 @@
 use diesel::{
-    backend::{
-        Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend,
-        sql_dialect::{self, returning_clause::DoesNotSupportReturningClause},
-    },
+    backend::{Backend, DieselReserveSpecialization, SqlDialect, TrustedBackend, sql_dialect},
     sql_types::TypeMetadata,
 };
 
@@ -46,8 +43,7 @@ impl TypeMetadata for D1Backend {
 }
 
 impl SqlDialect for D1Backend {
-    // this is actually not true, but i would need to properly implement the ast for this, since the sqlite one is not exported
-    type ReturningClause = DoesNotSupportReturningClause;
+    type ReturningClause = SqliteReturningClause;
 
     type OnConflictClause = SqliteOnConflictClause;
 
@@ -84,6 +80,7 @@ impl TrustedBackend for D1Backend {}
 pub struct SqliteOnConflictClause;
 
 impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClause {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere for SqliteOnConflictClause {}
 impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for SqliteOnConflictClause {}
 
 #[derive(Debug, Copy, Clone)]

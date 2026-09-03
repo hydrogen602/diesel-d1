@@ -115,6 +115,42 @@ class TestIntegration(unittest.TestCase):
     with urllib.request.urlopen(f'{BASE_URL}test_delete_zero_rows') as response:
       self.assertEqual(response.read().decode('utf-8'), 'test_delete_zero_rows passed')
 
+  def test_upsert_do_nothing(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_upsert_do_nothing') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_upsert_do_nothing passed')
+
+  def test_upsert_do_update(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_upsert_do_update') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_upsert_do_update passed')
+
+  def test_upsert_batch(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_upsert_batch') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_upsert_batch passed')
+
+  def test_upsert_where(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_upsert_where') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_upsert_where passed')
+
+  def test_returning_insert(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_returning_insert') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_returning_insert passed')
+
+  def test_returning_update(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_returning_update') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_returning_update passed')
+
+  def test_returning_delete(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_returning_delete') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_returning_delete passed')
+
+  def test_returning_upsert(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_returning_upsert') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_returning_upsert passed')
+
+  def test_returning_zero_rows(self):
+    with urllib.request.urlopen(f'{BASE_URL}test_returning_zero_rows') as response:
+      self.assertEqual(response.read().decode('utf-8'), 'test_returning_zero_rows passed')
+
 
 if __name__ == '__main__':
     unittest.main()
