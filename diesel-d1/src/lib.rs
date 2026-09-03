@@ -98,7 +98,7 @@ impl D1Connection {
         T: QueryFragment<D1Backend> + QueryId + 'query,
     {
         let mut query_builder = D1QueryBuilder::default();
-        source.to_sql(&mut query_builder, &D1Backend).unwrap();
+        source.to_sql(&mut query_builder, &D1Backend)?;
         let sql = query_builder.sql;
 
         // if we use a session, use it. Otherwise, use the database binding.
@@ -235,8 +235,15 @@ impl AsyncConnectionCore for D1Connection {
                 }
 
                 // if it's successful, meta exists with a `changes` key that is a number
-                let meta = result.meta().unwrap().unwrap();
-                let value = meta.changes.unwrap();
+                let meta = result
+                    .meta()
+                    .map_err(D1Error::from)?
+                    .ok_or_else(|| D1Error {
+                        message: "D1 didn't return meta property".to_string(),
+                    })?;
+                let value = meta.changes.ok_or_else(|| D1Error {
+                    message: "D1 didn't return change property".to_string(),
+                })?;
 
                 Ok(value)
             })

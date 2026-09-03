@@ -6,7 +6,8 @@ use diesel::{
 
 use crate::{
     backend::{D1Backend, D1TypeName},
-    value::D1Value,
+    utils::D1Error,
+    value::{D1Value, IntError, exceeds_js_safe_integer},
 };
 
 // Boolean
@@ -18,11 +19,16 @@ impl HasSqlType<sql_types::Bool> for D1Backend {
 
 impl FromSql<sql_types::Bool, D1Backend> for bool {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let bool_number = value.read_number();
-        if !(bool_number == 0.0 || bool_number == 1.0) {
-            panic!("this shouldn't happen bool is not a bool");
+        if let Some(bool_number) = value.read_number()
+            && (bool_number == 0.0 || bool_number == 1.0)
+        {
+            Ok(bool_number != 0.0)
+        } else {
+            Err(D1Error {
+                message: format!("expected bool but got: {}", value),
+            }
+            .into())
         }
-        Ok(bool_number != 0.0)
     }
 }
 
@@ -43,7 +49,12 @@ impl HasSqlType<sql_types::SmallInt> for D1Backend {
 
 impl FromSql<sql_types::SmallInt, D1Backend> for i16 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_number();
+        let Some(text) = value.read_number() else {
+            return Err(D1Error {
+                message: format!("expected small int but got: {}", value),
+            }
+            .into());
+        };
         Ok(text as i16)
     }
 }
@@ -67,8 +78,8 @@ impl HasSqlType<sql_types::Integer> for D1Backend {
 
 impl FromSql<sql_types::Integer, D1Backend> for i32 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_number();
-        Ok(text as i32)
+        let text = value.read_integer()?;
+        Ok(text.try_into()?)
     }
 }
 
@@ -83,19 +94,6 @@ impl ToSql<sql_types::Integer, D1Backend> for i32 {
 
 // BigInt is not supported by D1
 
-/// JS `Number.MAX_SAFE_INTEGER`
-///
-/// JS numbers are doubles, and
-/// after this point, the minimum precision
-/// is greater than one.
-///
-/// JS Example:
-/// ```js
-/// > 9007199254740993 === 9007199254740992
-/// true
-/// ```
-const NUMBER_MAX_SAFE_INTEGER: i64 = 9007199254740991;
-
 /// Note:
 ///   D1 supports 64-bit signed INTEGER values internally,
 ///   however BigInts are not currently supported in the API yet.
@@ -107,36 +105,16 @@ impl HasSqlType<sql_types::BigInt> for D1Backend {
     }
 }
 
-fn exceeds_js_safe_integer(value: i64) -> bool {
-    value > NUMBER_MAX_SAFE_INTEGER || value < -NUMBER_MAX_SAFE_INTEGER
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum BigIntError {
-    #[error("Number is not an integer")]
-    NotAnInteger(f64),
-    #[error("integer {0} is outside the Number.MAX_SAFE_INTEGER range")]
-    NotASafeInteger(i64),
-}
-
 impl FromSql<sql_types::BigInt, D1Backend> for i64 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_number();
-        if !text.is_finite() || text.fract() != 0.0 {
-            return Err(BigIntError::NotAnInteger(text).into());
-        }
-        let int = text as i64;
-        if exceeds_js_safe_integer(int) {
-            return Err(BigIntError::NotASafeInteger(int).into());
-        }
-        Ok(int)
+        value.read_integer().map_err(From::from)
     }
 }
 
 impl ToSql<sql_types::BigInt, D1Backend> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
         if exceeds_js_safe_integer(*self) {
-            return Err(BigIntError::NotASafeInteger(*self).into());
+            return Err(IntError::NotASafeInteger(*self).into());
         }
         out.set_value(*self as f64);
         Ok(IsNull::No)
@@ -155,7 +133,9 @@ impl HasSqlType<sql_types::Float> for D1Backend {
 
 impl FromSql<sql_types::Float, D1Backend> for f32 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_number();
+        let text = value.read_number().ok_or_else(|| D1Error {
+            message: format!("expected float but got: {}", value),
+        })?;
         Ok(text as f32)
     }
 }
@@ -179,7 +159,9 @@ impl HasSqlType<sql_types::Double> for D1Backend {
 
 impl FromSql<sql_types::Double, D1Backend> for f64 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_number();
+        let text = value.read_number().ok_or_else(|| D1Error {
+            message: format!("expected double but got: {}", value),
+        })?;
         Ok(text)
     }
 }
@@ -203,7 +185,9 @@ impl HasSqlType<sql_types::Text> for D1Backend {
 
 impl FromSql<sql_types::Text, D1Backend> for String {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_string();
+        let text = value.read_string().ok_or_else(|| D1Error {
+            message: format!("expected text but got: {}", value),
+        })?;
         Ok(text)
     }
 }
@@ -233,18 +217,12 @@ impl FromSql<sql_types::Binary, D1Backend> for Vec<u8> {
 
 impl ToSql<sql_types::Binary, D1Backend> for &[u8] {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
-        // // SAFETY: safe to do because we don't expect for buffer to change size, `as_ref` should always pass anyway
-        // let value = unsafe { js_sys::Uint8Array::new(&Uint8Array::view(self.as_ref().unwrap())) };
-        // out.set_value(value);
         out.set_value(*self);
         Ok(IsNull::No)
     }
 }
 impl ToSql<sql_types::Binary, D1Backend> for Vec<u8> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
-        // // SAFETY: safe to do because we don't expect for buffer to change size, `as_ref` should always pass anyway
-        // let value = unsafe { js_sys::Uint8Array::new(&Uint8Array::view(self.as_ref().unwrap())) };
-        // out.set_value(value);
         out.set_value(self.as_slice());
         Ok(IsNull::No)
     }
