@@ -137,11 +137,7 @@ impl SimpleAsyncConnection for D1Connection {
     async fn batch_execute(&mut self, query: &str) -> diesel::QueryResult<()> {
         match SendableFuture(self.db_binding().exec(query)).await {
             Ok(_) => Ok(()),
-            // FIXME(lduarte): I don't send a proper error becase I don't have time at the moment
-            Err(e) => Err(diesel::result::Error::DatabaseError(
-                diesel::result::DatabaseErrorKind::Unknown,
-                Box::new(D1Error::from(e)),
-            )),
+            Err(e) => Err(D1Error::from(e).into()),
         }
     }
 }
@@ -198,7 +194,7 @@ impl AsyncConnectionCore for D1Connection {
                 let rows = match raw_with_column_names(result).await {
                     Ok(rows) => rows,
                     Err(err) => {
-                        todo!("Error handling: {:?}", err);
+                        return Err(D1Error::from(err).into());
                     }
                 };
 
@@ -223,15 +219,12 @@ impl AsyncConnectionCore for D1Connection {
                 let result = match result.run().await {
                     Ok(res) => res,
                     Err(err) => {
-                        todo!("Error handling: {:?}", err);
+                        return Err(D1Error::from(err).into());
                     }
                 };
 
                 if let Some(error_str) = result.error() {
-                    return Err(diesel::result::Error::DatabaseError(
-                        diesel::result::DatabaseErrorKind::Unknown,
-                        Box::new(D1Error { message: error_str }),
-                    ));
+                    return Err(D1Error { message: error_str }.into());
                 }
 
                 // if it's successful, meta exists with a `changes` key that is a number

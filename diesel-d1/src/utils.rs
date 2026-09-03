@@ -32,6 +32,7 @@ where
 
 #[derive(Debug, thiserror::Error)]
 #[error("D1 error: {message}")]
+/// FIXME: this isn't the best error type
 pub struct D1Error {
     pub message: String,
 }
