@@ -18,7 +18,7 @@ use transaction_manager::D1TransactionManager;
 use utils::{D1Error, SendableFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use worker::{D1Database, D1PreparedStatement, Env};
+use worker::{D1Database, D1DatabaseSession, D1PreparedStatement, Env};
 
 use crate::bind_collector::D1TypeOwnable;
 
@@ -33,28 +33,87 @@ mod value;
 
 pub struct D1Connection {
     transaction_manager: D1TransactionManager,
-    binding: D1Database,
+    _binding: D1Database,
+    /// If None, no session is used.
+    session: Option<D1DatabaseSession>,
 }
 
-impl AsRef<D1Database> for D1Connection {
-    fn as_ref(&self) -> &D1Database {
-        &self.binding
-    }
-}
+// impl AsRef<D1Database> for D1Connection {
+//     fn as_ref(&self) -> &D1Database {
+//         &self.binding
+//     }
+// }
 
-impl AsMut<D1Database> for D1Connection {
-    fn as_mut(&mut self) -> &mut D1Database {
-        &mut self.binding
-    }
+// impl AsMut<D1Database> for D1Connection {
+//     fn as_mut(&mut self) -> &mut D1Database {
+//         &mut self.binding
+//     }
+// }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+/// Supported constraints are `"first-primary"` and `"first-unconstrained"`.
+/// Any other value is treated as a bookmark.
+/// https://developers.cloudflare.com/d1/worker-api/d1-database/#withsession
+pub enum SessionOptions {
+    #[default]
+    /// This provides the best guarantees.
+    FirstPrimary,
+    FirstUnconstrained,
+    Bookmark(String),
+    /// Don't use a session at all.
+    DoNotUseSession,
 }
 
 impl D1Connection {
-    pub fn new(env: &Env, name: &str) -> worker::Result<Self> {
+    pub fn new(env: &Env, name: &str, session_constraint: SessionOptions) -> worker::Result<Self> {
         let binding: D1Database = env.d1(name)?;
+
+        let session = match session_constraint {
+            SessionOptions::FirstPrimary => {
+                Some(binding.with_session_constraint(worker::D1SessionConstraint::FirstPrimary)?)
+            }
+            SessionOptions::FirstUnconstrained => Some(
+                binding.with_session_constraint(worker::D1SessionConstraint::FirstUnconstrained)?,
+            ),
+            // The case of passing in None here is equivalent to "first-unconstrained",
+            // so we don't need to handle that here as we already provided that option above.
+            SessionOptions::Bookmark(bookmark) => Some(binding.with_session(Some(&bookmark))?),
+            SessionOptions::DoNotUseSession => None,
+        };
+
         // use sessions
         Ok(D1Connection {
             transaction_manager: D1TransactionManager,
-            binding,
+            _binding: binding,
+            session,
+        })
+    }
+
+    pub(crate) fn db_binding(&self) -> &D1Database {
+        &self._binding
+    }
+
+    fn prepare_statement_sql<'query, T>(&self, source: T) -> QueryResult<D1PreparedStatement>
+    where
+        T: QueryFragment<D1Backend> + QueryId + 'query,
+    {
+        let mut query_builder = D1QueryBuilder::default();
+        source.to_sql(&mut query_builder, &D1Backend).unwrap();
+        let sql = query_builder.sql;
+
+        // if we use a session, use it. Otherwise, use the database binding.
+        let result = match &self.session {
+            Some(session) => session.prepare(sql),
+            None => self._binding.prepare(sql),
+        };
+
+        let binds = construct_bind_data(&source)?;
+
+        result.bind_refs(binds.iter()).map_err(|err| {
+            D1Error {
+                message: err.to_string(),
+            }
+            .into()
         })
     }
 }
@@ -64,13 +123,19 @@ unsafe impl Send for D1Connection {}
 unsafe impl Sync for D1Connection {}
 
 impl SimpleAsyncConnection for D1Connection {
-    /// FIXME: WARNING:
+    /// WARNING:
     /// This is not a d1 batch, as that requires a Vec of prepared statements,
     /// but we only get a &str.
     ///
     /// A possible solution would be to parse the sql and prepare the statements
+    ///
+    /// WARNING: This also can't use the session API, so if this batch_execute does a write,
+    /// subsequent reads are not guaranteed to see the changes.
+    ///
+    /// FIXME: both of the warnings could be removed if we can split the query
+    /// into individual statements and prepare them individually.
     async fn batch_execute(&mut self, query: &str) -> diesel::QueryResult<()> {
-        match SendableFuture(self.binding.exec(query)).await {
+        match SendableFuture(self.db_binding().exec(query)).await {
             Ok(_) => Ok(()),
             // FIXME(lduarte): I don't send a proper error becase I don't have time at the moment
             Err(e) => Err(diesel::result::Error::DatabaseError(
@@ -128,7 +193,7 @@ impl AsyncConnectionCore for D1Connection {
         T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
     {
         let source = source.as_query();
-        match prepare_statement_sql(source, &self.binding) {
+        match self.prepare_statement_sql(source) {
             Ok(result) => SendableFuture(async move {
                 let rows = match raw_with_column_names(result).await {
                     Ok(rows) => rows,
@@ -153,7 +218,7 @@ impl AsyncConnectionCore for D1Connection {
     where
         T: QueryFragment<Self::Backend> + QueryId + 'query,
     {
-        match prepare_statement_sql(source, &self.binding) {
+        match self.prepare_statement_sql(source) {
             Ok(result) => SendableFuture(async move {
                 let result = match result.run().await {
                     Ok(res) => res,
@@ -197,29 +262,6 @@ where
         .map(|(bind, _)| bind)
         .collect::<Vec<_>>();
     Ok(array)
-}
-
-fn prepare_statement_sql<'query, T>(
-    source: T,
-    binding: &D1Database,
-) -> QueryResult<D1PreparedStatement>
-where
-    T: QueryFragment<D1Backend> + QueryId + 'query,
-{
-    let mut query_builder = D1QueryBuilder::default();
-    source.to_sql(&mut query_builder, &D1Backend).unwrap();
-    let sql = query_builder.sql;
-
-    let result = binding.prepare(sql);
-
-    let binds = construct_bind_data(&source)?;
-
-    result.bind_refs(binds.iter()).map_err(|err| {
-        D1Error {
-            message: err.to_string(),
-        }
-        .into()
-    })
 }
 
 /// D1 rust bindings don't support this call yet, but the underlying JS API does.

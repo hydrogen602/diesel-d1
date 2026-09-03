@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use diesel_d1::SessionOptions;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -71,7 +72,7 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 }
 
 pub async fn test_delete_all(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: Del1 - All rows
     let delete = diesel::delete(sample_schema::posts::table);
@@ -92,7 +93,7 @@ pub async fn test_delete_all(env: &Env) {
 }
 
 pub async fn test_delete_identifiable(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     let post: Post = sample_schema::posts::table
         .find(5)
@@ -119,7 +120,7 @@ pub async fn test_delete_identifiable(env: &Env) {
 }
 
 pub async fn test_delete_where(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: DelW1 - `=` int
     diesel::delete(sample_schema::posts::table.filter(sample_schema::posts::id.eq(5)))
@@ -188,7 +189,7 @@ pub async fn test_delete_where(env: &Env) {
 }
 
 pub async fn test_delete_zero_rows(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: DelE2 - Zero rows
     let count =

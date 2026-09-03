@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use diesel_d1::SessionOptions;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -77,7 +78,7 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 }
 
 pub async fn test_update_all_rows(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: U1 - All rows
     let update = diesel::update(sample_schema::users::table)
@@ -96,7 +97,7 @@ pub async fn test_update_all_rows(env: &Env) {
 }
 
 pub async fn test_update_columns(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: U2 - Single column
     diesel::update(sample_schema::posts::table.filter(sample_schema::posts::id.eq(1)))
@@ -125,7 +126,7 @@ pub async fn test_update_columns(env: &Env) {
 }
 
 pub async fn test_update_changeset(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: U4 - AsChangeset
     diesel::update(sample_schema::users::table.filter(sample_schema::users::id.eq(1)))
@@ -159,7 +160,7 @@ pub async fn test_update_changeset(env: &Env) {
 }
 
 pub async fn test_update_where(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: UW1 - `=` int
     diesel::update(sample_schema::users::table.filter(sample_schema::users::id.eq(1)))
@@ -225,7 +226,7 @@ pub async fn test_update_where(env: &Env) {
 }
 
 pub async fn test_update_set(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: US1 - Set `NULL`
     diesel::update(sample_schema::posts::table.filter(sample_schema::posts::id.eq(1)))
@@ -258,7 +259,7 @@ pub async fn test_update_set(env: &Env) {
 }
 
 pub async fn test_update_zero_rows(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     // Test: UE2 - Zero rows
     let count =

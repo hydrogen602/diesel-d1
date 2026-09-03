@@ -1,6 +1,7 @@
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel_async::RunQueryDsl;
+use diesel_d1::SessionOptions;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -52,7 +53,7 @@ async fn load_ids(d1: &mut D1Connection) -> Vec<i32> {
 }
 
 pub async fn test_js_safe_integer_limits(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME).unwrap();
+    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
 
     let safe_rows: Vec<JsLimitRow> = sample_schema::js_limits::table
         .select(sample_schema::js_limits::all_columns)
@@ -86,10 +87,7 @@ pub async fn test_js_safe_integer_limits(env: &Env) {
         .select(sample_schema::js_limits::id)
         .filter(sample_schema::js_limits::int_val.eq(UNSAFE_POS));
     assert_safe_integer_error(
-        too_large_filter
-            .load::<i32>(&mut d1)
-            .await
-            .unwrap_err(),
+        too_large_filter.load::<i32>(&mut d1).await.unwrap_err(),
         "SerializationError",
     );
 
@@ -109,10 +107,7 @@ pub async fn test_js_safe_integer_limits(env: &Env) {
         .select(sample_schema::js_limits::id)
         .filter(sample_schema::js_limits::int_val.eq(UNSAFE_NEG));
     assert_safe_integer_error(
-        too_small_filter
-            .load::<i32>(&mut d1)
-            .await
-            .unwrap_err(),
+        too_small_filter.load::<i32>(&mut d1).await.unwrap_err(),
         "SerializationError",
     );
 
