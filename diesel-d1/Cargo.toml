@@ -17,6 +17,7 @@ crate-type = ["cdylib", "rlib"]
 diesel = { workspace = true, features = [
     "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
 ] }
+diesel-d1-core = { path = "../diesel-d1-core", features = ["worker"] }
 diesel-async = { workspace = true }
 futures-util = "0.3.34"
 itertools = "0.15.0"

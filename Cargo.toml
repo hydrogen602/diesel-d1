@@ -1,5 +1,5 @@
 [workspace]
-members = ["diesel-d1", "integration-tester"]
+members = ["diesel-d1", "diesel-d1-core", "integration-tester"]
 resolver = "3"
 
 [workspace.dependencies]

@@ -6,8 +6,9 @@ use diesel::insertable::{
 use diesel::query_builder::{AstPass, BatchInsert, NoFromClause, QueryFragment, ValuesClause};
 use diesel::query_source::Column;
 use diesel::result::QueryResult;
+use diesel_d1_core::traits::SqliteBatchInsert;
 
-use crate::backend::{D1Backend, SqliteBatchInsert};
+use crate::backend::D1Backend;
 
 impl<Col, Expr> InsertValues<D1Backend, Col::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>

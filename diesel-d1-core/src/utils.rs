@@ -5,7 +5,6 @@ use std::{
 };
 
 use diesel::result::DatabaseErrorInformation;
-use wasm_bindgen::JsValue;
 
 /// Basically, JS promises are never sendable - they just exist in one thread. While this could be a problem
 /// for multi-threaded WASM environments. However, Cloudflare Workers are ALWAYS single-threaded, so we can make
@@ -45,6 +44,7 @@ impl D1Error {
     }
 }
 
+#[cfg(feature = "worker")]
 impl From<worker::Error> for D1Error {
     fn from(error: worker::Error) -> Self {
         D1Error {
@@ -53,8 +53,9 @@ impl From<worker::Error> for D1Error {
     }
 }
 
-impl From<JsValue> for D1Error {
-    fn from(value: JsValue) -> Self {
+#[cfg(feature = "worker")]
+impl From<wasm_bindgen::JsValue> for D1Error {
+    fn from(value: wasm_bindgen::JsValue) -> Self {
         let message = value
             .as_string()
             .unwrap_or_else(|| js_sys::JsString::from(value).into());

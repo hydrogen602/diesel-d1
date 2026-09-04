@@ -235,12 +235,27 @@ version = "0.2.0"
 dependencies = [
  "diesel",
  "diesel-async",
+ "diesel-d1-core",
  "futures-util",
  "itertools",
  "js-sys",
  "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "worker",
+]
+
+[[package]]
+name = "diesel-d1-core"
+version = "0.1.0"
+dependencies = [
+ "diesel",
+ "diesel-async",
+ "futures-util",
+ "itertools",
+ "js-sys",
+ "thiserror",
+ "wasm-bindgen",
  "worker",
 ]
 

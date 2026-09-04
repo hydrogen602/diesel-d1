@@ -3,11 +3,12 @@ use diesel::{
     serialize::{IsNull, Output},
     sql_types::HasSqlType,
 };
+use diesel_d1_core::D1TypeName;
 use js_sys::Uint8Array;
 use wasm_bindgen::JsValue;
 use worker::{D1Argument, D1Type};
 
-use crate::backend::{D1Backend, D1TypeName};
+use crate::backend::D1Backend;
 
 #[derive(Debug)]
 /// Copied from [worker::D1Type] but added owned variants of ref types.

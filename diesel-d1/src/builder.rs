@@ -1,10 +1,7 @@
+use diesel_d1_core::{D1TransactionManager, Missing, Present, Required};
 use worker::Env;
 
-use crate::{
-    D1Connection, SessionOptions,
-    transaction_manager::D1TransactionManager,
-    utils::{Missing, Present, Required},
-};
+use crate::{D1Connection, SessionOptions};
 
 mod private {}
 

@@ -1,0 +1,24 @@
+[package]
+name = "diesel-d1-core"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+worker = ["dep:wasm-bindgen", "dep:worker", "dep:js-sys"]
+default = ["worker"]
+
+[dependencies]
+diesel = { workspace = true, features = [
+  "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+] }
+diesel-async = { workspace = true }
+futures-util = "0.3.34"
+itertools = "0.15.0"
+thiserror = "2.0.20"
+
+# For running in a worker
+# I'd like this not to be here, but I won't be able to implement
+# From for my error type without this due to the orphan rule.
+wasm-bindgen = { version = "0.2.127", optional = true }
+worker = { workspace = true, optional = true }
+js-sys = { version = "0.3.74", optional = true }

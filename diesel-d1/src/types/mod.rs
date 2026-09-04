@@ -3,12 +3,12 @@ use diesel::{
     serialize::{self, IsNull, Output, ToSql},
     sql_types::{self, HasSqlType},
 };
-
-use crate::{
-    backend::{D1Backend, D1TypeName},
-    utils::D1Error,
-    value::{D1Value, IntError, exceeds_js_safe_integer},
+use diesel_d1_core::{
+    prelude::*,
+    value::{IntError, JsonLikeValue, exceeds_js_safe_integer},
 };
+
+use crate::{backend::D1Backend, value::D1Value};
 
 // Boolean
 impl HasSqlType<sql_types::Bool> for D1Backend {
@@ -211,7 +211,7 @@ impl HasSqlType<sql_types::Binary> for D1Backend {
 
 impl FromSql<sql_types::Binary, D1Backend> for Vec<u8> {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        value.read_blob()
+        value.read_blob().map_err(From::from)
     }
 }
 

@@ -2,9 +2,9 @@ use diesel::{
     QueryResult,
     connection::{TransactionManagerStatus, ValidTransactionManagerStatus},
 };
-use diesel_async::TransactionManager;
+use diesel_async::{AsyncConnection, TransactionManager};
 
-use crate::{D1Connection, utils::D1Error};
+use crate::utils::D1Error;
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 /// D1 doesn't have transactions other than batches
@@ -33,11 +33,23 @@ impl D1TransactionManager {
     }
 }
 
-impl TransactionManager<D1Connection> for D1TransactionManager {
+pub trait D1Connection: AsyncConnection {
+    fn transaction_manager(&self) -> D1TransactionManager;
+    /// We need some mutable ref to placate diesel.
+    ///
+    /// This should match what
+    /// ```
+    /// self.transaction_manager().into_status()
+    /// ```
+    /// would return.
+    fn transaction_manager_status_mut(&mut self) -> &mut TransactionManagerStatus;
+}
+
+impl<C: D1Connection> TransactionManager<C> for D1TransactionManager {
     type TransactionStateData = Self;
 
-    async fn begin_transaction(conn: &mut D1Connection) -> QueryResult<()> {
-        match conn.transaction_manager {
+    async fn begin_transaction(conn: &mut C) -> QueryResult<()> {
+        match conn.transaction_manager() {
             D1TransactionManager::UnimplementedPanic => {
                 unimplemented!("D1 doesn't have transactions other than batches")
             }
@@ -48,8 +60,8 @@ impl TransactionManager<D1Connection> for D1TransactionManager {
         }
     }
 
-    async fn rollback_transaction(conn: &mut D1Connection) -> QueryResult<()> {
-        match conn.transaction_manager {
+    async fn rollback_transaction(conn: &mut C) -> QueryResult<()> {
+        match conn.transaction_manager() {
             D1TransactionManager::UnimplementedPanic => {
                 unimplemented!("D1 doesn't have transactions other than batches")
             }
@@ -60,8 +72,8 @@ impl TransactionManager<D1Connection> for D1TransactionManager {
         }
     }
 
-    async fn commit_transaction(conn: &mut D1Connection) -> QueryResult<()> {
-        match conn.transaction_manager {
+    async fn commit_transaction(conn: &mut C) -> QueryResult<()> {
+        match conn.transaction_manager() {
             D1TransactionManager::UnimplementedPanic => {
                 unimplemented!("D1 doesn't have transactions other than batches")
             }
@@ -72,13 +84,13 @@ impl TransactionManager<D1Connection> for D1TransactionManager {
         }
     }
 
-    fn transaction_manager_status_mut(conn: &mut D1Connection) -> &mut TransactionManagerStatus {
-        match &mut conn.transaction_manager {
+    fn transaction_manager_status_mut(conn: &mut C) -> &mut TransactionManagerStatus {
+        match conn.transaction_manager() {
             D1TransactionManager::UnimplementedPanic => {
                 unimplemented!("D1 doesn't have transactions other than batches")
             }
-            D1TransactionManager::QueryError => &mut conn.transaction_status,
-            D1TransactionManager::Ignore => &mut conn.transaction_status,
+            D1TransactionManager::QueryError => conn.transaction_manager_status_mut(),
+            D1TransactionManager::Ignore => conn.transaction_manager_status_mut(),
         }
     }
 }

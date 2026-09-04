@@ -6,6 +6,8 @@ use diesel::{
     query_builder::{AsQuery, QueryFragment, QueryId},
 };
 use diesel_async::{AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
+use diesel_d1_core::D1TransactionManager;
+use diesel_d1_core::prelude::*;
 use futures_util::{
     FutureExt, StreamExt,
     future::BoxFuture,
@@ -14,8 +16,6 @@ use futures_util::{
 use js_sys::{Array, Function, Promise, Reflect};
 use query_builder::D1QueryBuilder;
 use row::D1Row;
-use transaction_manager::D1TransactionManager;
-use utils::{D1Error, SendableFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use worker::{D1Database, D1DatabaseSession, D1PreparedStatement, Env};
@@ -27,9 +27,7 @@ mod bind_collector;
 mod builder;
 mod query_builder;
 mod row;
-mod transaction_manager;
 mod types;
-mod utils;
 mod value;
 pub use builder::D1ConnectionBuilder;
 
@@ -148,6 +146,16 @@ impl SimpleAsyncConnection for D1Connection {
             Ok(_) => Ok(()),
             Err(e) => Err(D1Error::from(e).into()),
         }
+    }
+}
+
+impl diesel_d1_core::D1Connection for D1Connection {
+    fn transaction_manager(&self) -> D1TransactionManager {
+        self.transaction_manager
+    }
+
+    fn transaction_manager_status_mut(&mut self) -> &mut TransactionManagerStatus {
+        &mut self.transaction_status
     }
 }
 
