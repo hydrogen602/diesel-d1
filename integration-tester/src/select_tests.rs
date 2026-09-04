@@ -2,10 +2,10 @@
 
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use diesel_d1::SessionOptions;
+use diesel_d1::D1ConnectionBuilder;
 use worker::*;
 
-use crate::{D1_NAME, D1Connection};
+use crate::D1_NAME;
 
 mod sample_schema {
     diesel::table! {
@@ -105,7 +105,11 @@ fn assert_typed(row: &Typed, id: i32, score: f64, payload: Option<&[u8]>) {
 }
 
 pub async fn test_users(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: S1 - All columns
     // Test: SW3 - `<` int
@@ -126,7 +130,11 @@ pub async fn test_users(env: &Env) {
 }
 
 pub async fn test_posts(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: S1 - All columns
     let query = sample_schema::posts::table.select(sample_schema::posts::all_columns);
@@ -203,7 +211,11 @@ pub async fn test_posts(env: &Env) {
 }
 
 pub async fn test_users_no_posts(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: S1 - All columns
     // Test: SJ2 - Left join
@@ -226,7 +238,11 @@ pub async fn test_users_no_posts(env: &Env) {
 }
 
 pub async fn test_select_specific_columns(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: S2 - Specific columns
     let query = sample_schema::users::table
@@ -243,7 +259,11 @@ pub async fn test_select_specific_columns(env: &Env) {
 }
 
 pub async fn test_where_not_null(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SW2 - `is not null`
     let query = sample_schema::posts::table
@@ -268,7 +288,11 @@ pub async fn test_where_not_null(env: &Env) {
 }
 
 pub async fn test_where_int(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SW4 - `>` int
     let query = sample_schema::users::table
@@ -361,7 +385,11 @@ pub async fn test_where_int(env: &Env) {
 }
 
 pub async fn test_where_string(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SW13 - `<` string
     let query = sample_schema::users::table
@@ -464,7 +492,11 @@ pub async fn test_where_string(env: &Env) {
 }
 
 pub async fn test_where_compound(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SW23 - `and`
     let query = sample_schema::users::table
@@ -506,7 +538,11 @@ pub async fn test_where_compound(env: &Env) {
 }
 
 pub async fn test_where_other_types(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SW26 - `<` real
     let query = sample_schema::typed::table
@@ -656,7 +692,11 @@ pub async fn test_where_other_types(env: &Env) {
 }
 
 pub async fn test_order_by(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SO1 - Single column
     let query = sample_schema::users::table
@@ -700,7 +740,11 @@ pub async fn test_order_by(env: &Env) {
 }
 
 pub async fn test_limit_offset(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SL1 - Single value
     let query = sample_schema::users::table
@@ -724,7 +768,11 @@ pub async fn test_limit_offset(env: &Env) {
 }
 
 pub async fn test_joins_on(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SJ3 - Left outer join
     let query = sample_schema::users::table
@@ -885,7 +933,11 @@ pub async fn test_joins_on(env: &Env) {
 }
 
 pub async fn test_joins_on_non_fk(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SJ7 - Inner join ON non-FK
     // Test: SJOn1 - `=` non-FK int
@@ -1049,7 +1101,11 @@ pub async fn test_joins_on_non_fk(env: &Env) {
 }
 
 pub async fn test_queryable_by_name(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: SQ2 - QueryableByName
     let rows: Vec<UserByName> = diesel::sql_query("SELECT * FROM users ORDER BY id")

@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use diesel::query_dsl::methods::FilterDsl;
 use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
-use diesel_d1::SessionOptions;
+use diesel_d1::D1ConnectionBuilder;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -48,7 +48,11 @@ async fn load_users(d1: &mut D1Connection) -> Vec<User> {
 }
 
 pub async fn test_upsert_do_nothing(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: Up1 - DO NOTHING
     let ignored = diesel::insert_into(sample_schema::users::table)
@@ -106,7 +110,11 @@ pub async fn test_upsert_do_nothing(env: &Env) {
 }
 
 pub async fn test_upsert_do_update(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: Up3 - DO UPDATE SET
     diesel::insert_into(sample_schema::users::table)
@@ -155,7 +163,11 @@ pub async fn test_upsert_do_update(env: &Env) {
 }
 
 pub async fn test_upsert_batch(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     let rows = vec![
         NewUser {
@@ -190,7 +202,11 @@ pub async fn test_upsert_batch(env: &Env) {
 }
 
 pub async fn test_upsert_where(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: UpW1 - WHERE on DO UPDATE
     diesel::insert_into(sample_schema::users::table)

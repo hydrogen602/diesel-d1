@@ -2,7 +2,7 @@ use backend::D1Backend;
 use bind_collector::D1BindCollector;
 use diesel::{
     ConnectionResult, QueryResult,
-    connection::{CacheSize, ConnectionSealed, Instrumentation},
+    connection::{CacheSize, ConnectionSealed, Instrumentation, TransactionManagerStatus},
     query_builder::{AsQuery, QueryFragment, QueryId},
 };
 use diesel_async::{AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
@@ -24,16 +24,19 @@ use crate::bind_collector::D1TypeOwnable;
 
 pub mod backend;
 mod bind_collector;
+mod builder;
 mod query_builder;
 mod row;
 mod transaction_manager;
 mod types;
 mod utils;
 mod value;
+pub use builder::D1ConnectionBuilder;
 
 pub struct D1Connection {
     transaction_manager: D1TransactionManager,
-    _binding: D1Database,
+    transaction_status: TransactionManagerStatus,
+    binding: D1Database,
     /// If None, no session is used.
     session: Option<D1DatabaseSession>,
 }
@@ -65,7 +68,12 @@ pub enum SessionOptions {
 }
 
 impl D1Connection {
-    pub fn new(env: &Env, name: &str, session_constraint: SessionOptions) -> worker::Result<Self> {
+    pub(crate) fn new(
+        env: &Env,
+        name: &str,
+        session_constraint: SessionOptions,
+        transaction_manager: D1TransactionManager,
+    ) -> worker::Result<Self> {
         let binding: D1Database = env.d1(name)?;
 
         let session = match session_constraint {
@@ -83,14 +91,15 @@ impl D1Connection {
 
         // use sessions
         Ok(D1Connection {
-            transaction_manager: D1TransactionManager,
-            _binding: binding,
+            transaction_manager,
+            transaction_status: transaction_manager.into_status(),
+            binding,
             session,
         })
     }
 
     pub(crate) fn db_binding(&self) -> &D1Database {
-        &self._binding
+        &self.binding
     }
 
     fn prepare_statement_sql<'query, T>(&self, source: T) -> QueryResult<D1PreparedStatement>
@@ -104,7 +113,7 @@ impl D1Connection {
         // if we use a session, use it. Otherwise, use the database binding.
         let result = match &self.session {
             Some(session) => session.prepare(sql),
-            None => self._binding.prepare(sql),
+            None => self.binding.prepare(sql),
         };
 
         let binds = construct_bind_data(&source)?;
@@ -320,11 +329,7 @@ async fn raw_with_column_names(
                     .into(),
                 );
             }
-            let fields = column_names
-                .iter()
-                .cloned()
-                .zip(values.into_iter())
-                .collect::<Vec<_>>();
+            let fields = column_names.iter().cloned().zip(values).collect::<Vec<_>>();
 
             Ok(D1Row::from_named_values(fields))
         })

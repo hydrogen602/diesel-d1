@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use diesel::upsert::excluded;
 use diesel_async::RunQueryDsl;
-use diesel_d1::SessionOptions;
+use diesel_d1::D1ConnectionBuilder;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -72,7 +72,11 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 }
 
 pub async fn test_returning_insert(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: R1 - INSERT all columns
     let user: User = diesel::insert_into(sample_schema::users::table)
@@ -127,7 +131,11 @@ pub async fn test_returning_insert(env: &Env) {
 }
 
 pub async fn test_returning_update(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: R3 - UPDATE all columns
     let user: User =
@@ -186,7 +194,11 @@ pub async fn test_returning_update(env: &Env) {
 }
 
 pub async fn test_returning_delete(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: R6 - DELETE specific columns
     let title: String =
@@ -227,7 +239,11 @@ pub async fn test_returning_delete(env: &Env) {
 }
 
 pub async fn test_returning_upsert(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: R7 - Upsert
     let inserted: User = diesel::insert_into(sample_schema::users::table)
@@ -270,7 +286,11 @@ pub async fn test_returning_upsert(env: &Env) {
 }
 
 pub async fn test_returning_zero_rows(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: RE1 - Zero rows
     let result =

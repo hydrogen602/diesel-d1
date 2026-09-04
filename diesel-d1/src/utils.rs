@@ -37,6 +37,14 @@ pub struct D1Error {
     pub message: String,
 }
 
+impl D1Error {
+    pub fn new(message: impl ToString) -> Self {
+        D1Error {
+            message: message.to_string(),
+        }
+    }
+}
+
 impl From<worker::Error> for D1Error {
     fn from(error: worker::Error) -> Self {
         D1Error {
@@ -90,5 +98,29 @@ impl DatabaseErrorInformation for D1Error {
 
     fn statement_position(&self) -> Option<i32> {
         None
+    }
+}
+
+// builder utils
+
+mod private {
+    pub trait Sealed {}
+}
+
+pub trait Required<T>: private::Sealed {}
+
+#[derive(Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct Missing;
+impl private::Sealed for Missing {}
+impl<T> Required<T> for Missing {}
+
+#[derive(Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct Present<T>(pub T);
+impl<T> private::Sealed for Present<T> {}
+impl<T> Required<T> for Present<T> {}
+
+impl<T> Present<T> {
+    pub fn into_inner(self) -> T {
+        self.0
     }
 }

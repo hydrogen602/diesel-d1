@@ -20,7 +20,7 @@ pub struct D1Value(pub(crate) JsValue);
 const NUMBER_MAX_SAFE_INTEGER: i64 = 9007199254740991;
 
 pub(crate) fn exceeds_js_safe_integer(value: i64) -> bool {
-    value > NUMBER_MAX_SAFE_INTEGER || value < -NUMBER_MAX_SAFE_INTEGER
+    !(-NUMBER_MAX_SAFE_INTEGER..=NUMBER_MAX_SAFE_INTEGER).contains(&value)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -30,7 +30,7 @@ pub enum IntError {
     #[error("Number is not an integer: {0}")]
     NotAnInteger(f64),
     #[error("integer {0} is outside the Number.MAX_SAFE_INTEGER range")]
-    NotASafeInteger(i64),
+    UnsafeInteger(i64),
 }
 
 impl D1Value {
@@ -48,11 +48,11 @@ impl D1Value {
             .ok_or(IntError::NotANumber(self.clone()))?;
 
         if !number.is_finite() || number.fract() != 0.0 {
-            return Err(IntError::NotAnInteger(number).into());
+            return Err(IntError::NotAnInteger(number));
         }
         let int = number as i64;
         if exceeds_js_safe_integer(int) {
-            return Err(IntError::NotASafeInteger(int).into());
+            return Err(IntError::UnsafeInteger(int));
         }
         Ok(int)
     }

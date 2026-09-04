@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel_async::RunQueryDsl;
-use diesel_d1::SessionOptions;
+use diesel_d1::D1ConnectionBuilder;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -53,7 +53,11 @@ async fn load_ids(d1: &mut D1Connection) -> Vec<i32> {
 }
 
 pub async fn test_js_safe_integer_limits(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     let safe_rows: Vec<JsLimitRow> = sample_schema::js_limits::table
         .select(sample_schema::js_limits::all_columns)

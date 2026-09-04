@@ -114,7 +114,7 @@ impl FromSql<sql_types::BigInt, D1Backend> for i64 {
 impl ToSql<sql_types::BigInt, D1Backend> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
         if exceeds_js_safe_integer(*self) {
-            return Err(IntError::NotASafeInteger(*self).into());
+            return Err(IntError::UnsafeInteger(*self).into());
         }
         out.set_value(*self as f64);
         Ok(IsNull::No)

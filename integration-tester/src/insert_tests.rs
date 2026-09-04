@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use diesel_d1::SessionOptions;
+use diesel_d1::D1ConnectionBuilder;
 use worker::*;
 
 use crate::{D1_NAME, D1Connection};
@@ -92,7 +92,11 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 }
 
 pub async fn test_insert_values(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: I1 - All columns
     // Test: I3 - Tuple of columns
@@ -179,7 +183,11 @@ pub async fn test_insert_values(env: &Env) {
 }
 
 pub async fn test_insert_default_values(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: I5 - Default values
     diesel::insert_into(sample_schema::notes::table)
@@ -200,7 +208,11 @@ pub async fn test_insert_default_values(env: &Env) {
 }
 
 pub async fn test_insert_batch(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     let new_users = vec![
         NewUser {
@@ -234,7 +246,11 @@ pub async fn test_insert_batch(env: &Env) {
 }
 
 pub async fn test_insert_from_select(env: &Env) {
-    let mut d1 = D1Connection::new(env, D1_NAME, SessionOptions::default()).unwrap();
+    let mut d1 = D1ConnectionBuilder::new()
+        .env(env)
+        .name(D1_NAME)
+        .build()
+        .unwrap();
 
     // Test: IS1 - Insert from select
     diesel::insert_into(sample_schema::posts::table)
