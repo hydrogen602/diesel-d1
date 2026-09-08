@@ -1,11 +1,11 @@
+use crate::{
+    prelude::*,
+    value::{IntError, JsonLikeValue, exceeds_js_safe_integer},
+};
 use diesel::{
     deserialize::{self, FromSql},
     serialize::{self, IsNull, Output, ToSql},
     sql_types::{self, HasSqlType},
-};
-use diesel_d1_core::{
-    prelude::*,
-    value::{IntError, JsonLikeValue, exceeds_js_safe_integer},
 };
 
 use crate::{backend::D1Backend, value::D1Value};
@@ -19,13 +19,11 @@ impl HasSqlType<sql_types::Bool> for D1Backend {
 
 impl FromSql<sql_types::Bool, D1Backend> for bool {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        if let Some(bool_number) = value.read_number()
-            && (bool_number == 0.0 || bool_number == 1.0)
-        {
-            Ok(bool_number != 0.0)
+        if let Some(bool) = value.read_boolean() {
+            Ok(bool)
         } else {
             Err(D1Error {
-                message: format!("expected bool but got: {}", value),
+                message: format!("expected bool but got: {:?}", value),
             }
             .into())
         }
@@ -49,13 +47,11 @@ impl HasSqlType<sql_types::SmallInt> for D1Backend {
 
 impl FromSql<sql_types::SmallInt, D1Backend> for i16 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let Some(text) = value.read_number() else {
-            return Err(D1Error {
-                message: format!("expected small int but got: {}", value),
-            }
-            .into());
-        };
-        Ok(text as i16)
+        let int = value.read_integer().map_err(|e| D1Error {
+            message: format!("expected small int but got: {:?} with error: {}", value, e),
+        })?;
+
+        Ok(int.try_into()?)
     }
 }
 
@@ -134,7 +130,7 @@ impl HasSqlType<sql_types::Float> for D1Backend {
 impl FromSql<sql_types::Float, D1Backend> for f32 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
         let text = value.read_number().ok_or_else(|| D1Error {
-            message: format!("expected float but got: {}", value),
+            message: format!("expected float but got: {:?}", value),
         })?;
         Ok(text as f32)
     }
@@ -160,7 +156,7 @@ impl HasSqlType<sql_types::Double> for D1Backend {
 impl FromSql<sql_types::Double, D1Backend> for f64 {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
         let text = value.read_number().ok_or_else(|| D1Error {
-            message: format!("expected double but got: {}", value),
+            message: format!("expected double but got: {:?}", value),
         })?;
         Ok(text)
     }
@@ -186,7 +182,7 @@ impl HasSqlType<sql_types::Text> for D1Backend {
 impl FromSql<sql_types::Text, D1Backend> for String {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
         let text = value.read_string().ok_or_else(|| D1Error {
-            message: format!("expected text but got: {}", value),
+            message: format!("expected text but got: {:?}", value),
         })?;
         Ok(text)
     }

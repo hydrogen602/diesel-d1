@@ -15,6 +15,16 @@ pub trait JsonLikeValue {
     /// Read a number from the value.
     fn read_number(&self) -> Option<f64>;
 
+    /// Read a boolean from the value.
+    fn read_boolean(&self) -> Option<bool> {
+        let int = self.read_integer().ok()?;
+        match int {
+            0 => Some(false),
+            1 => Some(true),
+            _ => None,
+        }
+    }
+
     /// Read an integer from the value.
     fn read_integer(&self) -> Result<i64, IntError> {
         let number = self
@@ -65,6 +75,7 @@ pub enum IntError {
 /// What an SQLite & JSONs value can be.
 ///
 /// This is what one value in a D1 row would be returned as.
+#[derive(Debug)]
 pub enum D1Value<'a> {
     Null,
     Number(f64),
@@ -74,10 +85,67 @@ pub enum D1Value<'a> {
     BlobRef(&'a [u8]),
 }
 
+impl<'a> D1Value<'a> {
+    /// No-clone way to get another D1Value
+    pub fn as_ref(&'a self) -> D1Value<'a> {
+        match self {
+            D1Value::Null => D1Value::Null,
+            D1Value::Number(number) => D1Value::Number(*number),
+            D1Value::String(string) => D1Value::StringRef(string.as_ref()),
+            D1Value::StringRef(string) => D1Value::StringRef(string),
+            D1Value::Blob(blob) => D1Value::BlobRef(blob.as_ref()),
+            D1Value::BlobRef(blob) => D1Value::BlobRef(blob),
+        }
+    }
+}
+
+impl JsonLikeValue for D1Value<'_> {
+    type BlobError = BlobError;
+
+    fn js_to_string(&self) -> String {
+        match self {
+            D1Value::Null => "null".to_string(),
+            D1Value::Number(number) => number.to_string(),
+            D1Value::String(string) => string.to_string(),
+            D1Value::StringRef(string) => string.to_string(),
+            D1Value::Blob(blob) => format!("blob of length {}", blob.len()),
+            D1Value::BlobRef(blob) => format!("blob of length {}", blob.len()),
+        }
+    }
+
+    fn read_string(&self) -> Option<String> {
+        match self {
+            D1Value::String(string) => Some(string.to_string()),
+            D1Value::StringRef(string) => Some(string.to_string()),
+            _ => None,
+        }
+    }
+
+    fn read_number(&self) -> Option<f64> {
+        match self {
+            D1Value::Number(number) => Some(*number),
+            D1Value::String(string) => string.parse().ok(),
+            D1Value::StringRef(string) => string.parse().ok(),
+            _ => None,
+        }
+    }
+
+    fn read_blob(&self) -> Result<Vec<u8>, Self::BlobError> {
+        match self {
+            D1Value::Blob(blob) => Ok(blob.to_vec()),
+            D1Value::BlobRef(blob) => Ok(blob.to_vec()),
+            _ => Err(BlobError::NotABlob {
+                typeof_: stringify!(D1Value).to_string(),
+                to_string: self.js_to_string(),
+            }),
+        }
+    }
+}
+
 pub type D1ValueOwned = D1Value<'static>;
 
 #[cfg(feature = "worker")]
-pub use worker_impls::{BlobError, js_to_string, js_typeof};
+pub use worker_impls::{BlobError, NotConvertibleToD1ValueError, js_to_string, js_typeof};
 
 #[cfg(feature = "worker")]
 mod worker_impls {

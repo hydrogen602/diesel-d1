@@ -1,35 +1,30 @@
 use std::rc::Rc;
 
-use backend::D1Backend;
-use bind_collector::D1BindCollector;
 use diesel::{
     ConnectionResult, QueryResult,
     connection::{CacheSize, ConnectionSealed, Instrumentation, TransactionManagerStatus},
-    query_builder::{AsQuery, QueryFragment, QueryId},
+    query_builder::{AsQuery, QueryBuilder, QueryFragment, QueryId},
 };
 use diesel_async::{AsyncConnection, AsyncConnectionCore, SimpleAsyncConnection};
-use diesel_d1_core::D1TransactionManager;
-use diesel_d1_core::prelude::*;
+use diesel_d1_core::{
+    D1TransactionManager,
+    bind_collector::D1BindCollector,
+    query_builder::D1QueryBuilder,
+    value::{D1Value, NotConvertibleToD1ValueError},
+};
+use diesel_d1_core::{prelude::*, row::D1Row};
 use futures_util::{
     FutureExt, StreamExt,
     future::BoxFuture,
     stream::{self, BoxStream},
 };
+use itertools::Itertools;
 use js_sys::{Array, Function, Promise, Reflect};
-use query_builder::D1QueryBuilder;
-use row::D1Row;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use worker::{D1Database, D1DatabaseSession, D1PreparedStatement, Env};
 
-use crate::{bind_collector::D1TypeOwnable, value::D1Value};
-
-pub mod backend;
-mod bind_collector;
 mod builder;
-mod query_builder;
-mod row;
-mod types;
 mod value;
 pub use builder::D1ConnectionBuilder;
 
@@ -108,7 +103,7 @@ impl D1Connection {
     {
         let mut query_builder = D1QueryBuilder::default();
         source.to_sql(&mut query_builder, &D1Backend)?;
-        let sql = query_builder.sql;
+        let sql = query_builder.finish();
 
         // if we use a session, use it. Otherwise, use the database binding.
         let result = match &self.session {
@@ -200,7 +195,7 @@ impl AsyncConnectionCore for D1Connection {
     type Stream<'conn, 'query> = BoxStream<'conn, QueryResult<Self::Row<'conn, 'query>>>;
 
     #[doc = " The row type used by the stream returned by `AsyncConnection::load`"]
-    type Row<'conn, 'query> = D1Row;
+    type Row<'conn, 'query> = D1Row<'static>;
 
     fn load<'conn, 'query, T>(&'conn mut self, source: T) -> Self::LoadFuture<'conn, 'query>
     where
@@ -267,7 +262,7 @@ impl AsyncConnectionCore for D1Connection {
 
 impl ConnectionSealed for D1Connection {}
 
-fn construct_bind_data<T>(query: &T) -> Result<Vec<D1TypeOwnable<'_>>, diesel::result::Error>
+fn construct_bind_data<T>(query: &T) -> Result<Vec<D1ValueSendable<'_>>, diesel::result::Error>
 where
     T: QueryFragment<D1Backend>,
 {
@@ -292,7 +287,7 @@ where
 /// https://developers.cloudflare.com/d1/worker-api/prepared-statements/#raw
 async fn raw_with_column_names(
     stmt: D1PreparedStatement,
-) -> worker::Result<Vec<QueryResult<D1Row>>> {
+) -> worker::Result<Vec<QueryResult<D1Row<'static>>>> {
     let this = stmt.inner();
     let raw_fn = Reflect::get(this, &JsValue::from_str("raw"))?
         .dyn_into::<Function>()
@@ -341,7 +336,10 @@ async fn raw_with_column_names(
                     .into(),
                 );
             }
-            let values: Box<[D1Value]> = values.into_iter().map(D1Value).collect();
+            let values: Result<Box<[D1Value]>, NotConvertibleToD1ValueError> =
+                values.into_iter().map(D1Value::try_from).try_collect();
+
+            let values = values.map_err(D1Error::new)?;
 
             Ok(D1Row::new(column_names.clone(), values))
         })

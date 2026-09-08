@@ -1,14 +1,21 @@
+pub mod backend;
+pub mod bind_collector;
+pub mod query_builder;
+pub mod row;
 pub mod traits;
 mod transaction_manager;
+pub mod types;
 mod utils;
 pub mod value;
 
+pub use backend::D1Backend;
+pub use bind_collector::D1ValueSendable;
 pub use transaction_manager::D1Connection;
 pub use transaction_manager::D1TransactionManager;
 pub use utils::{D1Error, Missing, Present, Required, SendableFuture};
 
 pub mod prelude {
-    pub use super::{D1Error, D1TypeName, SendableFuture};
+    pub use super::{D1Backend, D1Error, D1TypeName, D1ValueSendable, SendableFuture};
 }
 
 /// Determines how a bind parameter is given to SQLite

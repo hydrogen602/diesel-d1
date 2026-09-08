@@ -1,3 +1,4 @@
+use crate::traits::SqliteBatchInsert;
 use diesel::backend::sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword;
 use diesel::expression::{AppearsOnTable, Expression};
 use diesel::insertable::{
@@ -6,7 +7,6 @@ use diesel::insertable::{
 use diesel::query_builder::{AstPass, BatchInsert, NoFromClause, QueryFragment, ValuesClause};
 use diesel::query_source::Column;
 use diesel::result::QueryResult;
-use diesel_d1_core::traits::SqliteBatchInsert;
 
 use crate::backend::D1Backend;
 

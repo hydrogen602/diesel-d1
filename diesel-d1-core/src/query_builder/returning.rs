@@ -1,8 +1,8 @@
 use crate::backend::D1Backend;
+use crate::traits::SqliteReturningClause;
 use diesel::query_builder::ReturningClause;
 use diesel::query_builder::{AstPass, QueryFragment};
 use diesel::result::QueryResult;
-use diesel_d1_core::traits::SqliteReturningClause;
 
 impl<Expr> QueryFragment<D1Backend, SqliteReturningClause> for ReturningClause<Expr>
 where
