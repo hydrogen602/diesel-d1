@@ -22,7 +22,6 @@ pub mod prelude {
 ///
 /// Note: Based on [worker::D1Type]
 /// - This should be called D1Type but workers already uses that name.
-#[allow(missing_debug_implementations)]
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum D1TypeName {
     Null,

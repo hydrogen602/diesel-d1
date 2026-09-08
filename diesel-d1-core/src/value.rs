@@ -61,3 +61,113 @@ pub enum IntError {
     #[error("integer {0} is outside the Number.MAX_SAFE_INTEGER range")]
     UnsafeInteger(i64),
 }
+
+/// What an SQLite & JSONs value can be.
+///
+/// This is what one value in a D1 row would be returned as.
+pub enum D1Value<'a> {
+    Null,
+    Number(f64),
+    String(Box<str>),
+    StringRef(&'a str),
+    Blob(Box<[u8]>),
+    BlobRef(&'a [u8]),
+}
+
+pub type D1ValueOwned = D1Value<'static>;
+
+#[cfg(feature = "worker")]
+pub use worker_impls::{BlobError, js_to_string, js_typeof};
+
+#[cfg(feature = "worker")]
+mod worker_impls {
+    use js_sys::{Array, ArrayBuffer, JsString, Uint8Array};
+    use wasm_bindgen::JsCast;
+
+    use super::*;
+
+    #[derive(Debug, thiserror::Error)]
+    pub enum BlobError {
+        #[error("Value is not a blob: typeof: {typeof_}, to_string: {to_string:?}")]
+        NotABlob { typeof_: String, to_string: String },
+        #[error("Blob array element was not a number: typeof: {typeof_}, to_string: {to_string:?}")]
+        ElementNotANumber { typeof_: String, to_string: String },
+        #[error("Blob array element out of byte range: {0}")]
+        ElementOutOfByteRange(f64),
+    }
+
+    #[derive(Debug, thiserror::Error)]
+    #[error(
+        "Value is not convertible to a D1/SQLite value: typeof: {typeof_}, to_string: {to_string:?}. Tried null, undefined, string, number, boolean, blob."
+    )]
+    pub struct NotConvertibleToD1ValueError {
+        pub typeof_: String,
+        pub to_string: String,
+    }
+
+    impl<'a> TryFrom<wasm_bindgen::JsValue> for D1Value<'a> {
+        type Error = NotConvertibleToD1ValueError;
+
+        fn try_from(value: wasm_bindgen::JsValue) -> Result<Self, Self::Error> {
+            if value.is_null_or_undefined() {
+                Ok(D1Value::Null)
+            } else if let Some(string) = value.as_string() {
+                Ok(D1Value::String(string.into()))
+            } else if let Some(number) = value.as_f64() {
+                // js doesn't have an integer type so f64 also handles those.
+                Ok(D1Value::Number(number))
+            } else if let Some(bool) = value.as_bool() {
+                // SQLite doesn't have a boolean type, and js doesn't have an integer type,
+                // so we convert all to f64.
+                Ok(D1Value::Number(i32::from(bool) as f64))
+            } else if let Ok(bytes) = read_blob(&value) {
+                Ok(D1Value::Blob(bytes.into()))
+            } else {
+                Err(NotConvertibleToD1ValueError {
+                    typeof_: js_typeof(&value),
+                    to_string: js_to_string(value),
+                })
+            }
+        }
+    }
+
+    fn read_blob(value: &wasm_bindgen::JsValue) -> Result<Vec<u8>, BlobError> {
+        if let Some(bytes) = value.dyn_ref::<Uint8Array>() {
+            return Ok(bytes.to_vec());
+        }
+        if ArrayBuffer::instanceof(value) {
+            return Ok(Uint8Array::new(value).to_vec());
+        }
+        // And... D1 returns a blob as an array of JS numbers
+        if let Some(arr) = value.dyn_ref::<Array>() {
+            let mut bytes = Vec::with_capacity(arr.length() as usize);
+            for value in arr.iter() {
+                let number = value.as_f64().ok_or(BlobError::ElementNotANumber {
+                    typeof_: js_typeof(&value),
+                    to_string: js_to_string(value),
+                })?;
+                if !(0.0..=255.0).contains(&number) || number.fract() != 0.0 {
+                    return Err(BlobError::ElementOutOfByteRange(number));
+                }
+                bytes.push(number as u8);
+            }
+            return Ok(bytes);
+        }
+        Err(BlobError::NotABlob {
+            typeof_: js_typeof(value),
+            to_string: js_to_string(value.clone()),
+        })
+    }
+
+    pub fn js_typeof(value: &wasm_bindgen::JsValue) -> String {
+        value
+            .js_typeof()
+            .as_string()
+            .unwrap_or_else(|| "unknown".to_string())
+    }
+
+    /// JsString wants a JsValue, not a reference.
+    pub fn js_to_string(value: wasm_bindgen::JsValue) -> String {
+        JsString::from(value).into()
+    }
+}
