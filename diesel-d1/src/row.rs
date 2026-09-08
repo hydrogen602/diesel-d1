@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use diesel::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use wasm_bindgen::JsValue;
 
@@ -5,19 +7,24 @@ use crate::{backend::D1Backend, value::D1Value};
 
 /// One result row, with column names in SELECT order.
 ///
-/// Stored as `(name, value)` pairs so duplicate names (joins) stay positional
-/// for [`Queryable`], while [`QueryableByName`] can look up the first match.
-///
-/// TODO: it might make sense to not own the keys
-///   as currently every row has its own copy of the keys
-///   either `Vec<(&str, JsValue)>` or a `key: Arc<[String]>`
+/// Invariant: the length of `column_names` and `fields` are the same,
+/// and they are in the same order.
 pub struct D1Row {
-    fields: Vec<(String, JsValue)>,
+    column_names: Rc<[String]>,
+    fields: Box<[D1Value]>,
 }
 
 impl D1Row {
-    pub(crate) fn from_named_values(fields: Vec<(String, JsValue)>) -> Self {
-        Self { fields }
+    pub(crate) fn new(column_names: Rc<[String]>, fields: Box<[D1Value]>) -> Self {
+        debug_assert_eq!(
+            column_names.len(),
+            fields.len(),
+            "column_names and fields must have the same length"
+        );
+        Self {
+            column_names,
+            fields,
+        }
     }
 }
 
@@ -46,11 +53,11 @@ impl<'stmt> Row<'stmt, D1Backend> for D1Row {
         Self: diesel::row::RowIndex<I>,
     {
         let index = self.idx(idx)?;
-        let (name, value) = self.fields.get(index)?;
-        Some(D1Field {
-            value: value.clone(),
-            name,
-        })
+
+        let name = self.column_names.get(index)?.as_str();
+        let D1Value(value) = self.fields.get(index)?;
+
+        Some(D1Field { value, name })
     }
 
     fn partial_row(
@@ -73,12 +80,12 @@ impl RowIndex<usize> for D1Row {
 
 impl RowIndex<&str> for D1Row {
     fn idx(&self, field: &str) -> Option<usize> {
-        self.fields.iter().position(|(name, _)| name == field)
+        self.column_names.iter().position(|name| name == field)
     }
 }
 
 pub struct D1Field<'a> {
-    value: JsValue,
+    value: &'a JsValue,
     name: &'a str,
 }
 
