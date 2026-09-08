@@ -5,7 +5,8 @@ edition = "2024"
 
 [features]
 worker = ["dep:wasm-bindgen", "dep:worker", "dep:js-sys"]
-default = ["worker"]
+# default = ["worker"]
+default = []
 
 [dependencies]
 diesel = { workspace = true, features = [

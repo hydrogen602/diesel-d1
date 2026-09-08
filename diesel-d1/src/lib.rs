@@ -25,7 +25,6 @@ use wasm_bindgen_futures::JsFuture;
 use worker::{D1Database, D1DatabaseSession, D1PreparedStatement, Env};
 
 mod builder;
-mod value;
 pub use builder::D1ConnectionBuilder;
 
 pub struct D1Connection {
@@ -36,17 +35,17 @@ pub struct D1Connection {
     session: Option<D1DatabaseSession>,
 }
 
-// impl AsRef<D1Database> for D1Connection {
-//     fn as_ref(&self) -> &D1Database {
-//         &self.binding
-//     }
-// }
+impl AsRef<D1Database> for D1Connection {
+    fn as_ref(&self) -> &D1Database {
+        &self.binding
+    }
+}
 
-// impl AsMut<D1Database> for D1Connection {
-//     fn as_mut(&mut self) -> &mut D1Database {
-//         &mut self.binding
-//     }
-// }
+impl AsMut<D1Database> for D1Connection {
+    fn as_mut(&mut self) -> &mut D1Database {
+        &mut self.binding
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 /// Supported constraints are `"first-primary"` and `"first-unconstrained"`.
