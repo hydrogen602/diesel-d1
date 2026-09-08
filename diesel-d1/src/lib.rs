@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use backend::D1Backend;
 use bind_collector::D1BindCollector;
 use diesel::{
@@ -20,7 +22,7 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use worker::{D1Database, D1DatabaseSession, D1PreparedStatement, Env};
 
-use crate::bind_collector::D1TypeOwnable;
+use crate::{bind_collector::D1TypeOwnable, value::D1Value};
 
 pub mod backend;
 mod bind_collector;
@@ -312,6 +314,8 @@ async fn raw_with_column_names(
         })
         .collect::<worker::Result<_>>()?;
 
+    let column_names: Rc<[String]> = column_names.into();
+
     // we shifted the array so we only have data rows left
     Ok(array
         .into_iter()
@@ -329,9 +333,9 @@ async fn raw_with_column_names(
                     .into(),
                 );
             }
-            let fields = column_names.iter().cloned().zip(values).collect::<Vec<_>>();
+            let values: Box<[D1Value]> = values.into_iter().map(D1Value).collect();
 
-            Ok(D1Row::from_named_values(fields))
+            Ok(D1Row::new(column_names.clone(), values))
         })
         .collect())
 }
