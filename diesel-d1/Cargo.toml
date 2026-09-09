@@ -8,7 +8,7 @@ authors = [
 ]
 license-file = "../LICENSE"
 homepage = "https://github.com/hydrogen602/diesel-d1"
-description = "A Diesel Backend/Connection for Cloudflare D1."
+description = "A Diesel Backend/Connection for Cloudflare D1 using bindings within workers."
 
 [lib]
 crate-type = ["cdylib", "rlib"]

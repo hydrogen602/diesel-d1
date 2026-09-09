@@ -100,7 +100,7 @@ impl<'a> D1Value<'a> {
 }
 
 impl JsonLikeValue for D1Value<'_> {
-    type BlobError = BlobError;
+    type BlobError = D1Error;
 
     fn js_to_string(&self) -> String {
         match self {
@@ -134,10 +134,7 @@ impl JsonLikeValue for D1Value<'_> {
         match self {
             D1Value::Blob(blob) => Ok(blob.to_vec()),
             D1Value::BlobRef(blob) => Ok(blob.to_vec()),
-            _ => Err(BlobError::NotABlob {
-                typeof_: stringify!(D1Value).to_string(),
-                to_string: self.js_to_string(),
-            }),
+            _ => Err(D1Error::new(format!("Value is not a blob: {:?}", self))),
         }
     }
 }
@@ -146,6 +143,8 @@ pub type D1ValueOwned = D1Value<'static>;
 
 #[cfg(feature = "worker")]
 pub use worker_impls::{BlobError, NotConvertibleToD1ValueError, js_to_string, js_typeof};
+
+use crate::D1Error;
 
 #[cfg(feature = "worker")]
 mod worker_impls {
