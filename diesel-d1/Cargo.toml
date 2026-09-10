@@ -9,6 +9,8 @@ authors = [
 license-file = "../LICENSE"
 homepage = "https://github.com/hydrogen602/diesel-d1"
 description = "A Diesel Backend/Connection for Cloudflare D1."
+keywords = ["diesel", "cloudflare", "d1", "database", "wasm"]
+categories = ["database", "wasm", "web-programming"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
