@@ -1,5 +1,8 @@
 use std::fmt::{Debug, Display};
 
+/// A string that is not shown when displayed or debugged.
+///
+/// To ensure sensitive info isn't accidentally leaked in logs or errors.
 pub struct NoShowString(String);
 
 impl NoShowString {

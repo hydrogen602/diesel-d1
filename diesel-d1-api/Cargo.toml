@@ -7,6 +7,8 @@ license-file = "../LICENSE"
 homepage = "https://github.com/hydrogen602/diesel-d1"
 authors = ["Jonathan Rotter <contact@hydrogen602.com>"]
 
+[features]
+default = ["reqwest"]
 
 [dependencies]
 diesel = { workspace = true, features = [
@@ -17,7 +19,7 @@ diesel-async = { workspace = true }
 futures-util = "0.3.34"
 itertools = "0.15.0"
 thiserror = "2.0.20"
-reqwest = { version = "0.13.5", features = ["json"] }
+reqwest = { version = "0.13.5", features = ["json"], optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0"
 uuid = "1.26.0"

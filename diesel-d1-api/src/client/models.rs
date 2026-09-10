@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::connection::StatementWithBinds;
+
 /// Body for `POST /accounts/{account_id}/d1/database/{database_id}/raw`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -8,12 +10,33 @@ pub enum RawQueryRequest {
     Multiple(MultipleQueries),
 }
 
+impl From<D1SingleQuery> for RawQueryRequest {
+    fn from(query: D1SingleQuery) -> Self {
+        RawQueryRequest::Single(query)
+    }
+}
+
+impl From<MultipleQueries> for RawQueryRequest {
+    fn from(queries: MultipleQueries) -> Self {
+        RawQueryRequest::Multiple(queries)
+    }
+}
+
 /// A single query with or without parameters.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct D1SingleQuery {
     pub sql: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub params: Option<Vec<String>>,
+}
+
+impl From<StatementWithBinds<'_>> for RawQueryRequest {
+    fn from(query: StatementWithBinds<'_>) -> Self {
+        RawQueryRequest::Single(D1SingleQuery {
+            sql: query.sql,
+            params: query.binds.iter().map(|bind| bind.to_string()).collect(),
+        })
+    }
 }
 
 /// A batch of queries.
