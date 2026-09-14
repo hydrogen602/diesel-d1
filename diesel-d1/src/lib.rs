@@ -13,6 +13,7 @@ use futures_util::{
     future::BoxFuture,
     stream::{self, BoxStream},
 };
+use itertools::Itertools;
 use js_sys::{Array, Function, Promise, Reflect};
 use query_builder::D1QueryBuilder;
 use row::D1Row;
@@ -134,23 +135,62 @@ unsafe impl Send for D1Connection {}
 unsafe impl Sync for D1Connection {}
 
 impl SimpleAsyncConnection for D1Connection {
-    /// WARNING:
-    /// This is not a d1 batch, as that requires a Vec of prepared statements,
-    /// but we only get a &str.
+    /// D1 prepared statements may contain only one SQL statement, so multi-statement
+    /// queries are split with sqlparser and executed via D1's batch API.
     ///
-    /// A possible solution would be to parse the sql and prepare the statements
-    ///
-    /// WARNING: This also can't use the session API, so if this batch_execute does a write,
-    /// subsequent reads are not guaranteed to see the changes.
-    ///
-    /// FIXME: both of the warnings could be removed if we can split the query
-    /// into individual statements and prepare them individually.
+    /// As it runs as a D1 batch, all statements are executed in a single transaction.
     async fn batch_execute(&mut self, query: &str) -> diesel::QueryResult<()> {
-        match SendableFuture(self.db_binding().exec(query)).await {
-            Ok(_) => Ok(()),
-            Err(e) => Err(D1Error::from(e).into()),
+        let statements = split_sql_statements(query)?;
+        if statements.is_empty() {
+            return Ok(());
+        }
+
+        let results = match &self.session {
+            Some(session) => {
+                let prepared = statements
+                    .into_iter()
+                    .map(|sql| session.prepare(sql))
+                    .collect();
+                SendableFuture(session.batch(prepared)).await
+            }
+            None => {
+                let prepared = statements
+                    .into_iter()
+                    .map(|sql| self.binding.prepare(sql))
+                    .collect();
+                SendableFuture(self.binding.batch(prepared)).await
+            }
+        }
+        .map_err(D1Error::from)?;
+
+        let errs = results.into_iter().filter_map(|e| e.error()).join("\n");
+        if !errs.is_empty() {
+            Err(D1Error { message: errs }.into())
+        } else {
+            Ok(())
         }
     }
+}
+
+/// D1's `prepare` accepts only a single statement, so multi-statement SQL must be split first.
+fn split_sql_statements(query: &str) -> QueryResult<Vec<String>> {
+    use sqlparser::dialect::SQLiteDialect;
+    use sqlparser::parser::Parser;
+
+    let dialect = SQLiteDialect {};
+    let statements =
+        Parser::parse_sql(&dialect, query).map_err(|err| -> diesel::result::Error {
+            D1Error {
+                message: format!("failed to parse SQL for batch_execute: {err}"),
+            }
+            .into()
+        })?;
+
+    Ok(statements
+        .into_iter()
+        .map(|statement| statement.to_string())
+        .filter(|sql| !sql.trim().is_empty())
+        .collect())
 }
 
 impl AsyncConnection for D1Connection {
