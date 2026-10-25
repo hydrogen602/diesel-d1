@@ -231,18 +231,6 @@ impl ToSql<sql_types::Binary, D1Backend> for Vec<u8> {
         Ok(IsNull::No)
     }
 }
-// impl FromSql<sql_types::Binary, D1Backend> for serde_json::Value {
-//     fn from_nullable_sql(
-//         bytes: Option<<D1Backend as diesel::backend::Backend>::RawValue<'_>>,
-//     ) -> deserialize::Result<Self> {
-//     }
-// }
-// impl ToSql<sql_types::Binary, D1Backend> for serde_json::Value {
-//     fn to_nullable_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
-//         out.set_value(self.to_string().as_bytes());
-//         Ok(IsNull::No)
-//     }
-// }
 
 // ------ Time related (simplified to only text)
 
@@ -293,6 +281,18 @@ impl HasSqlType<sql_types::Timestamp> for D1Backend {
 //         ToSql::<sql_types::Text, D1Backend>::to_sql(self, out)
 //     }
 // }
+
+impl HasSqlType<diesel::sql_types::Jsonb> for D1Backend {
+    fn metadata(_lookup: &mut ()) -> D1TypeName {
+        D1TypeName::Blob
+    }
+}
+
+impl HasSqlType<diesel::sql_types::Json> for D1Backend {
+    fn metadata(_lookup: &mut ()) -> D1TypeName {
+        D1TypeName::Text
+    }
+}
 
 // ----------------------------------------------------------------------------
 // Code derived from Diesel project, see LICENSE for details.
