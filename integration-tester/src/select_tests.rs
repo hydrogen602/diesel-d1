@@ -106,8 +106,7 @@ fn assert_typed(row: &Typed, id: i32, score: f64, payload: Option<&[u8]>) {
 
 pub async fn test_users(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -131,8 +130,7 @@ pub async fn test_users(env: &Env) {
 
 pub async fn test_posts(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -212,8 +210,7 @@ pub async fn test_posts(env: &Env) {
 
 pub async fn test_users_no_posts(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -239,8 +236,7 @@ pub async fn test_users_no_posts(env: &Env) {
 
 pub async fn test_select_specific_columns(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -260,8 +256,7 @@ pub async fn test_select_specific_columns(env: &Env) {
 
 pub async fn test_where_not_null(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -289,8 +284,7 @@ pub async fn test_where_not_null(env: &Env) {
 
 pub async fn test_where_int(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -386,8 +380,7 @@ pub async fn test_where_int(env: &Env) {
 
 pub async fn test_where_string(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -493,8 +486,7 @@ pub async fn test_where_string(env: &Env) {
 
 pub async fn test_where_compound(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -539,8 +531,7 @@ pub async fn test_where_compound(env: &Env) {
 
 pub async fn test_where_other_types(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -693,8 +684,7 @@ pub async fn test_where_other_types(env: &Env) {
 
 pub async fn test_order_by(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -741,8 +731,7 @@ pub async fn test_order_by(env: &Env) {
 
 pub async fn test_limit_offset(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -769,8 +758,7 @@ pub async fn test_limit_offset(env: &Env) {
 
 pub async fn test_joins_on(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -934,8 +922,7 @@ pub async fn test_joins_on(env: &Env) {
 
 pub async fn test_joins_on_non_fk(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -1102,8 +1089,7 @@ pub async fn test_joins_on_non_fk(env: &Env) {
 
 pub async fn test_queryable_by_name(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 

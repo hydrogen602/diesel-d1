@@ -73,8 +73,7 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 
 pub async fn test_returning_insert(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -132,8 +131,7 @@ pub async fn test_returning_insert(env: &Env) {
 
 pub async fn test_returning_update(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -195,8 +193,7 @@ pub async fn test_returning_update(env: &Env) {
 
 pub async fn test_returning_delete(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -240,8 +237,7 @@ pub async fn test_returning_delete(env: &Env) {
 
 pub async fn test_returning_upsert(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -287,8 +283,7 @@ pub async fn test_returning_upsert(env: &Env) {
 
 pub async fn test_returning_zero_rows(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 

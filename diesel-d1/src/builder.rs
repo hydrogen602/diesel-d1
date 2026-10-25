@@ -1,4 +1,4 @@
-use worker::Env;
+use worker::D1Database;
 
 use crate::{
     D1Connection, SessionOptions,
@@ -10,55 +10,35 @@ mod private {}
 
 #[derive(Default)]
 /// Builder for a D1 connection.
-pub struct D1ConnectionBuilder<E, N> {
+pub struct D1ConnectionBuilder<D> {
     transaction_manager: D1TransactionManager,
     session: SessionOptions,
-    env: E,
-    name: N,
+    binding: D,
 }
 
-impl D1ConnectionBuilder<Missing, Missing> {
+impl D1ConnectionBuilder<Missing> {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl<'a, N: Required<&'a str>> D1ConnectionBuilder<Missing, N> {
-    pub fn env(self, env: &Env) -> D1ConnectionBuilder<Present<&Env>, N> {
+impl<'a> D1ConnectionBuilder<Missing> {
+    pub fn binding(self, binding: D1Database) -> D1ConnectionBuilder<Present<D1Database>> {
         let Self {
             transaction_manager,
             session,
-            name,
-            env: Missing,
-        } = self;
-        D1ConnectionBuilder {
-            transaction_manager,
-            session,
-            name,
-            env: Present(env),
-        }
-    }
-}
-
-impl<'a, E: Required<&'a Env>> D1ConnectionBuilder<E, Missing> {
-    pub fn name(self, name: &str) -> D1ConnectionBuilder<E, Present<&str>> {
-        let Self {
-            transaction_manager,
-            session,
-            name: Missing,
-            env,
+            binding: Missing,
         } = self;
 
         D1ConnectionBuilder {
             transaction_manager,
             session,
-            name: Present(name),
-            env,
+            binding: Present(binding),
         }
     }
 }
 
-impl<'a, E: Required<&'a Env>, N: Required<&'a str>> D1ConnectionBuilder<E, N> {
+impl<'a, D: Required<D1Database>> D1ConnectionBuilder<D> {
     pub fn transaction_manager(mut self, transaction_manager: D1TransactionManager) -> Self {
         self.transaction_manager = transaction_manager;
         self
@@ -70,15 +50,14 @@ impl<'a, E: Required<&'a Env>, N: Required<&'a str>> D1ConnectionBuilder<E, N> {
     }
 }
 
-impl D1ConnectionBuilder<Present<&Env>, Present<&str>> {
+impl D1ConnectionBuilder<Present<D1Database>> {
     pub fn build(self) -> worker::Result<D1Connection> {
         let Self {
             transaction_manager,
             session,
-            env: Present(env),
-            name: Present(name),
+            binding: Present(binding),
         } = self;
 
-        D1Connection::new(env, name, session, transaction_manager)
+        D1Connection::new(binding, session, transaction_manager)
     }
 }

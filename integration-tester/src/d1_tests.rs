@@ -54,8 +54,7 @@ async fn load_ids(d1: &mut D1Connection) -> Vec<i32> {
 
 pub async fn test_js_safe_integer_limits(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 

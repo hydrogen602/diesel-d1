@@ -93,8 +93,7 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 
 pub async fn test_insert_values(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -184,8 +183,7 @@ pub async fn test_insert_values(env: &Env) {
 
 pub async fn test_insert_default_values(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -209,8 +207,7 @@ pub async fn test_insert_default_values(env: &Env) {
 
 pub async fn test_insert_batch(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -247,8 +244,7 @@ pub async fn test_insert_batch(env: &Env) {
 
 pub async fn test_insert_from_select(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 

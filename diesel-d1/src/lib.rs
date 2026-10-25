@@ -17,7 +17,6 @@ use itertools::Itertools;
 use js_sys::{Array, Function, Promise, Reflect};
 use query_builder::D1QueryBuilder;
 use row::D1Row;
-use transaction_manager::D1TransactionManager;
 use utils::{D1Error, SendableFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
@@ -35,6 +34,7 @@ mod types;
 mod utils;
 mod value;
 pub use builder::D1ConnectionBuilder;
+pub use transaction_manager::D1TransactionManager;
 
 pub struct D1Connection {
     transaction_manager: D1TransactionManager,
@@ -72,13 +72,10 @@ pub enum SessionOptions {
 
 impl D1Connection {
     pub(crate) fn new(
-        env: &Env,
-        name: &str,
+        binding: D1Database,
         session_constraint: SessionOptions,
         transaction_manager: D1TransactionManager,
     ) -> worker::Result<Self> {
-        let binding: D1Database = env.d1(name)?;
-
         let session = match session_constraint {
             SessionOptions::FirstPrimary => {
                 Some(binding.with_session_constraint(worker::D1SessionConstraint::FirstPrimary)?)

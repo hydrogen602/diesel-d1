@@ -49,8 +49,7 @@ async fn load_users(d1: &mut D1Connection) -> Vec<User> {
 
 pub async fn test_upsert_do_nothing(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -111,8 +110,7 @@ pub async fn test_upsert_do_nothing(env: &Env) {
 
 pub async fn test_upsert_do_update(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -164,8 +162,7 @@ pub async fn test_upsert_do_update(env: &Env) {
 
 pub async fn test_upsert_batch(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -203,8 +200,7 @@ pub async fn test_upsert_batch(env: &Env) {
 
 pub async fn test_upsert_where(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 

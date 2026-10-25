@@ -73,8 +73,7 @@ async fn load_posts(d1: &mut D1Connection) -> Vec<Post> {
 
 pub async fn test_delete_all(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -98,8 +97,7 @@ pub async fn test_delete_all(env: &Env) {
 
 pub async fn test_delete_identifiable(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -129,8 +127,7 @@ pub async fn test_delete_identifiable(env: &Env) {
 
 pub async fn test_delete_where(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
@@ -202,8 +199,7 @@ pub async fn test_delete_where(env: &Env) {
 
 pub async fn test_delete_zero_rows(env: &Env) {
     let mut d1 = D1ConnectionBuilder::new()
-        .env(env)
-        .name(D1_NAME)
+        .binding(env.d1(D1_NAME).unwrap())
         .build()
         .unwrap();
 
