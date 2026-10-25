@@ -34,7 +34,7 @@ pub enum IntError {
 }
 
 impl D1Value {
-    pub(crate) fn read_string(&self) -> Option<String> {
+    pub(crate) fn read_text(&self) -> Option<String> {
         self.0.as_string()
     }
     /// JS numbers are always f64, this might cause precision issues when crossing boundaries

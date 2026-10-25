@@ -10,6 +10,8 @@ use crate::{
     value::{D1Value, IntError, exceeds_js_safe_integer},
 };
 
+mod json;
+
 // Boolean
 impl HasSqlType<sql_types::Bool> for D1Backend {
     fn metadata(_lookup: &mut ()) -> D1TypeName {
@@ -185,7 +187,7 @@ impl HasSqlType<sql_types::Text> for D1Backend {
 
 impl FromSql<sql_types::Text, D1Backend> for String {
     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        let text = value.read_string().ok_or_else(|| D1Error {
+        let text = value.read_text().ok_or_else(|| D1Error {
             message: format!("expected text but got: {}", value),
         })?;
         Ok(text)
@@ -227,6 +229,18 @@ impl ToSql<sql_types::Binary, D1Backend> for Vec<u8> {
         Ok(IsNull::No)
     }
 }
+// impl FromSql<sql_types::Binary, D1Backend> for serde_json::Value {
+//     fn from_nullable_sql(
+//         bytes: Option<<D1Backend as diesel::backend::Backend>::RawValue<'_>>,
+//     ) -> deserialize::Result<Self> {
+//     }
+// }
+// impl ToSql<sql_types::Binary, D1Backend> for serde_json::Value {
+//     fn to_nullable_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
+//         out.set_value(self.to_string().as_bytes());
+//         Ok(IsNull::No)
+//     }
+// }
 
 // ------ Time related (simplified to only text)
 

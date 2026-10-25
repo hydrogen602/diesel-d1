@@ -85,6 +85,11 @@ impl From<Box<[u8]>> for D1TypeOwnable<'_> {
         D1TypeOwnable::BlobOwned(value)
     }
 }
+impl From<Vec<u8>> for D1TypeOwnable<'_> {
+    fn from(value: Vec<u8>) -> Self {
+        D1TypeOwnable::BlobOwned(value.into())
+    }
+}
 
 impl D1TypeOwnable<'_> {
     pub fn as_ref(&self) -> D1Type<'_> {
