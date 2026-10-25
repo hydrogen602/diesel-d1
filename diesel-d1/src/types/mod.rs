@@ -1,7 +1,8 @@
 use diesel::{
     deserialize::{self, FromSql},
+    query_builder::QueryId,
     serialize::{self, IsNull, Output, ToSql},
-    sql_types::{self, HasSqlType},
+    sql_types::{self, HasSqlType, SqlType},
 };
 
 use crate::{
@@ -10,6 +11,7 @@ use crate::{
     value::{D1Value, IntError, exceeds_js_safe_integer},
 };
 
+mod date_and_time;
 mod json;
 
 // Boolean
@@ -262,32 +264,61 @@ impl HasSqlType<sql_types::Timestamp> for D1Backend {
     }
 }
 
-impl FromSql<sql_types::Date, D1Backend> for String {
-    fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        FromSql::<sql_types::Text, D1Backend>::from_sql(value)
-    }
-}
+// impl FromSql<sql_types::Date, D1Backend> for String {
+//     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
+//         FromSql::<sql_types::Text, D1Backend>::from_sql(value)
+//     }
+// }
 
-impl ToSql<sql_types::Date, D1Backend> for String {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
-        ToSql::<sql_types::Text, D1Backend>::to_sql(self, out)
-    }
-}
+// impl ToSql<sql_types::Date, D1Backend> for String {
+//     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
+//         ToSql::<sql_types::Text, D1Backend>::to_sql(self, out)
+//     }
+// }
 
-impl FromSql<sql_types::Time, D1Backend> for String {
-    fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        FromSql::<sql_types::Text, D1Backend>::from_sql(value)
-    }
-}
+// impl FromSql<sql_types::Time, D1Backend> for String {
+//     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
+//         FromSql::<sql_types::Text, D1Backend>::from_sql(value)
+//     }
+// }
 
-impl FromSql<sql_types::Timestamp, D1Backend> for String {
-    fn from_sql(value: D1Value) -> deserialize::Result<Self> {
-        FromSql::<sql_types::Text, D1Backend>::from_sql(value)
-    }
-}
+// impl FromSql<sql_types::Timestamp, D1Backend> for String {
+//     fn from_sql(value: D1Value) -> deserialize::Result<Self> {
+//         FromSql::<sql_types::Text, D1Backend>::from_sql(value)
+//     }
+// }
 
-impl ToSql<sql_types::Timestamp, D1Backend> for String {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
-        ToSql::<sql_types::Text, D1Backend>::to_sql(self, out)
-    }
-}
+// impl ToSql<sql_types::Timestamp, D1Backend> for String {
+//     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, D1Backend>) -> serialize::Result {
+//         ToSql::<sql_types::Text, D1Backend>::to_sql(self, out)
+//     }
+// }
+
+// ----------------------------------------------------------------------------
+// Code derived from Diesel project, see LICENSE for details.
+// ----------------------------------------------------------------------------
+
+/// The SQLite timestamp with time zone type
+///
+/// ### [`ToSql`] impls
+///
+/// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+/// - [`chrono::DateTime`] with `feature = "chrono"`
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
+///
+/// ### [`FromSql`] impls
+///
+/// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+/// - [`chrono::DateTime`] with `feature = "chrono"`
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(sqlite_type(name = "Text"))]
+pub struct Timestamptz;
+
+pub type TimestamptzSqlite = Timestamptz;

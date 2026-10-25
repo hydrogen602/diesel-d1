@@ -20,7 +20,7 @@ use row::D1Row;
 use utils::{D1Error, SendableFuture};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use worker::{D1Database, D1DatabaseSession, D1PreparedStatement, Env};
+use worker::{D1Database, D1DatabaseSession, D1PreparedStatement};
 
 use crate::{bind_collector::D1TypeOwnable, value::D1Value};
 
@@ -98,7 +98,7 @@ impl D1Connection {
         })
     }
 
-    pub(crate) fn db_binding(&self) -> &D1Database {
+    pub fn db_binding(&self) -> &D1Database {
         &self.binding
     }
 

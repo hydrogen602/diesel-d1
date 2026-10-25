@@ -91,6 +91,14 @@ impl D1Value {
     pub(crate) fn js_to_string(&self) -> String {
         ToString::to_string(&JsString::from(self.0.clone()))
     }
+
+    /// Code derived from Diesel project, see LICENSE for details.
+    /// Returns `None` if [D1Value::read_text] fails.
+    pub(crate) fn parse_string<R>(&mut self, f: impl FnOnce(&str) -> R) -> Option<R> {
+        let text = self.read_text()?;
+
+        Some(f(&text))
+    }
 }
 
 impl fmt::Display for D1Value {
